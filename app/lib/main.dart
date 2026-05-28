@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/chat_screen.dart';
+import 'screens/family_tree_screen.dart';
 import 'screens/feed_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -36,6 +37,9 @@ class _RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     if (_navIndex == 1) {
       return ChatScreen(navIndex: _navIndex, onNavSelect: _select);
+    }
+    if (_navIndex == 2) {
+      return FamilyTreeScreen(navIndex: _navIndex, onNavSelect: _select);
     }
     return FeedScreen(navIndex: _navIndex, onNavSelect: _select);
   }

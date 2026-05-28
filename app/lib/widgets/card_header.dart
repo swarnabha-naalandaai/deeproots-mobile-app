@@ -81,7 +81,7 @@ class _CardHeaderState extends State<CardHeader> {
             ),
           ),
           _TypePill(widget.post.type.label),
-          const SizedBox(width: 20),
+          const SizedBox(width: 8),
           GestureDetector(
             key: _kebabKey,
             onTap: _handleMore,

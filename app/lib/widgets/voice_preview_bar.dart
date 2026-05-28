@@ -181,12 +181,14 @@ class _VoicePreviewBarState extends State<VoicePreviewBar> {
               color: _meta,
             ),
           ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: widget.onClose,
-            behavior: HitTestBehavior.opaque,
-            child: const Icon(Icons.close, size: 16, color: _meta),
-          ),
+          if (widget.onClose != null) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: widget.onClose,
+              behavior: HitTestBehavior.opaque,
+              child: const Icon(Icons.close, size: 16, color: _meta),
+            ),
+          ],
         ],
       ),
     );
