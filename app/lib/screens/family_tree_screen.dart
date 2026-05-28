@@ -10,6 +10,7 @@ import '../widgets/family/family_node.dart';
 import '../widgets/family/family_member_profile_sheet.dart';
 import '../widgets/family/family_tree_header.dart';
 import '../widgets/family/time_travel_bar.dart';
+import 'add_relative_screen.dart';
 
 class FamilyTreeScreen extends StatelessWidget {
   final int navIndex;
@@ -33,6 +34,23 @@ class FamilyTreeScreen extends StatelessWidget {
   void _snack(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), duration: const Duration(seconds: 1)),
+    );
+  }
+
+  void _openAddRelative(
+    BuildContext context, {
+    required Relation relation,
+    String? subjectName,
+    String pronounPossessive = 'her',
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddRelativeScreen(
+          relation: relation,
+          subjectName: subjectName,
+          pronounPossessive: pronounPossessive,
+        ),
+      ),
     );
   }
 
@@ -81,10 +99,10 @@ class FamilyTreeScreen extends StatelessWidget {
                           _heart(left: 353, top: 199),
                           _heart(left: 206, top: 366),
 
-                          // Sparkle accent.
+                          // Sparkle accent (on Prerna only).
                           Positioned(
-                            left: 129,
-                            top: 151,
+                            left: 130,
+                            top: 158,
                             child: Icon(
                               PhosphorIcons.sparkle(PhosphorIconsStyle.fill),
                               size: 12,
@@ -121,7 +139,12 @@ class FamilyTreeScreen extends StatelessWidget {
                             top: 167.5,
                             child: AddNode(
                               member: FamilyTreeMock.fatherPlaceholder,
-                              onTap: () => _snack(context, 'Add Father'),
+                              onTap: () => _openAddRelative(
+                                context,
+                                relation: Relation.father,
+                                subjectName: FamilyTreeMock.aparna.name,
+                                pronounPossessive: 'her',
+                              ),
                             ),
                           ),
                           Positioned(
@@ -129,7 +152,12 @@ class FamilyTreeScreen extends StatelessWidget {
                             top: 167.5,
                             child: AddNode(
                               member: FamilyTreeMock.motherPlaceholder,
-                              onTap: () => _snack(context, 'Add Mother'),
+                              onTap: () => _openAddRelative(
+                                context,
+                                relation: Relation.mother,
+                                subjectName: FamilyTreeMock.aparna.name,
+                                pronounPossessive: 'her',
+                              ),
                             ),
                           ),
 
@@ -173,7 +201,12 @@ class FamilyTreeScreen extends StatelessWidget {
                             top: 487,
                             child: AddNode(
                               member: FamilyTreeMock.siblingPlaceholder,
-                              onTap: () => _snack(context, 'Add Sibling'),
+                              onTap: () => _openAddRelative(
+                                context,
+                                relation: Relation.sibling,
+                                subjectName: FamilyTreeMock.riya.name,
+                                pronounPossessive: 'her',
+                              ),
                             ),
                           ),
 
@@ -197,7 +230,12 @@ class FamilyTreeScreen extends StatelessWidget {
                     right: 12,
                     bottom: 58,
                     child: GestureDetector(
-                      onTap: () => _snack(context, 'Add family member'),
+                      onTap: () => _openAddRelative(
+                        context,
+                        relation: Relation.child,
+                        subjectName: FamilyTreeMock.riya.name,
+                        pronounPossessive: 'her',
+                      ),
                       child: Container(
                         width: 56,
                         height: 56,

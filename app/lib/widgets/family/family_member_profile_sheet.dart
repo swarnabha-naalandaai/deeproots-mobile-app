@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../models/family_member.dart';
 import '../../models/family_tree_mock.dart';
+import '../../screens/add_relative_screen.dart';
 import '../recording_sheet.dart';
 import '../voice_preview_bar.dart';
 
@@ -528,17 +529,49 @@ class _ProfileContentState extends State<_ProfileContent> {
       const SizedBox(height: 12),
       Row(
         children: [
-          Expanded(child: _addSlot('Parent', 'Mother or father')),
+          Expanded(
+            child: _addSlot(
+              context,
+              'Parent',
+              'Mother or father',
+              Relation.mother,
+              m,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _addSlot('Partner', 'Wife or husband')),
+          Expanded(
+            child: _addSlot(
+              context,
+              'Partner',
+              'Wife or husband',
+              Relation.spouse,
+              m,
+            ),
+          ),
         ],
       ),
       const SizedBox(height: 12),
       Row(
         children: [
-          Expanded(child: _addSlot('Child', 'Daughter or son')),
+          Expanded(
+            child: _addSlot(
+              context,
+              'Child',
+              'Daughter or son',
+              Relation.child,
+              m,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _addSlot('Sibling', 'Sister or brother')),
+          Expanded(
+            child: _addSlot(
+              context,
+              'Sibling',
+              'Sister or brother',
+              Relation.sibling,
+              m,
+            ),
+          ),
         ],
       ),
       const SizedBox(height: 24),
@@ -583,8 +616,47 @@ class _ProfileContentState extends State<_ProfileContent> {
     );
   }
 
-  Widget _addSlot(String title, String subtitle) {
-    return Container(
+  String _possessiveFor(FamilyMember m) {
+    switch (m.relation) {
+      case Relation.father:
+      case Relation.grandfather:
+        return 'his';
+      case Relation.mother:
+      case Relation.grandmother:
+        return 'her';
+      default:
+        return 'their';
+    }
+  }
+
+  void _openAddRelative(
+    BuildContext context,
+    Relation relation,
+    FamilyMember subject,
+  ) {
+    Navigator.of(context).pop();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddRelativeScreen(
+          relation: relation,
+          subjectName: _firstName(subject.name),
+          pronounPossessive: _possessiveFor(subject),
+        ),
+      ),
+    );
+  }
+
+  Widget _addSlot(
+    BuildContext context,
+    String title,
+    String subtitle,
+    Relation relation,
+    FamilyMember subject,
+  ) {
+    return GestureDetector(
+      onTap: () => _openAddRelative(context, relation, subject),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       decoration: BoxDecoration(
         color: const Color(0xFFF0F1F0),
@@ -640,6 +712,7 @@ class _ProfileContentState extends State<_ProfileContent> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

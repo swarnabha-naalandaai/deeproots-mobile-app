@@ -46,7 +46,6 @@ class FamilyTreeMock {
     id: 'aparna',
     name: 'Aparna Dey',
     relation: Relation.mother,
-    deceased: true,
     badgeCount: 2,
   );
 
@@ -54,7 +53,6 @@ class FamilyTreeMock {
     id: 'meera',
     name: 'Meera Dutta',
     relation: Relation.mother,
-    deceased: true,
   );
 
   static const FamilyMember riya = FamilyMember(
