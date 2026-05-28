@@ -75,29 +75,6 @@ class PhotoUploadConfig extends FieldConfig {
   bool hasValue(Object? value) => value is List && value.isNotEmpty;
 }
 
-class VoiceTranscriptionConfig extends FieldConfig {
-  final String recordTitle;
-  final String recordLabel;
-  final String helperText;
-  final bool transcribe;
-
-  const VoiceTranscriptionConfig({
-    required super.key,
-    super.label,
-    super.optional,
-    required this.recordTitle,
-    this.recordLabel = 'Record',
-    this.helperText = 'We will transcribe it for you',
-    this.transcribe = true,
-  });
-
-  @override
-  Object? defaultValue() => null;
-
-  @override
-  bool hasValue(Object? value) => value is RecordedVoiceNote;
-}
-
 class VoiceNotesConfig extends FieldConfig {
   final String recordTitle;
   final String addLabel;

@@ -7,7 +7,6 @@ import 'fields/tags_widget.dart';
 import 'fields/text_area_widget.dart';
 import 'fields/text_field_widget.dart';
 import 'fields/voice_notes_widget.dart';
-import 'fields/voice_transcription_widget.dart';
 
 class FormRenderer extends StatelessWidget {
   final List<FieldConfig> fields;
@@ -58,13 +57,6 @@ class FormRenderer extends StatelessWidget {
           key: ValueKey(field.key),
           config: field,
           value: (value as List?)?.cast<String>() ?? const [],
-          onChanged: (v) => onChanged(field.key, v),
-        );
-      case VoiceTranscriptionConfig():
-        return VoiceTranscriptionWidget(
-          key: ValueKey(field.key),
-          config: field,
-          value: value as RecordedVoiceNote?,
           onChanged: (v) => onChanged(field.key, v),
         );
       case VoiceNotesConfig():

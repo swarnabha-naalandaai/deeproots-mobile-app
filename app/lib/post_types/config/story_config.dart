@@ -7,12 +7,11 @@ const PostTypeConfig storyConfig = PostTypeConfig(
   headerTitle: 'New Story',
   submittedMessage: 'Story posted',
   fields: [
-    VoiceTranscriptionConfig(
-      key: 'transcription',
-      recordTitle: 'Recording a memory of Prerna...',
-      recordLabel: 'Record story',
-      helperText: 'We will transcribe it for you',
-      transcribe: true,
+    VoiceNotesConfig(
+      key: 'recording',
+      label: 'Record your story',
+      recordTitle: 'Recording a memory...',
+      addLabel: 'Record story',
     ),
     TextFieldConfig(
       key: 'title',
