@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/form/field_label.dart';
@@ -28,9 +30,25 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _addPhoto() async {
+    if (widget.config.source == UploadSource.files) {
+      final result = await FilePicker.pickFiles(allowMultiple: true);
+      if (result == null || result.files.isEmpty) return;
+      final paths = result.files
+          .map((f) => f.path)
+          .whereType<String>()
+          .toList();
+      widget.onChanged([...widget.value, ...paths]);
+      return;
+    }
     final picked = await _picker.pickMultiImage();
     if (picked.isEmpty) return;
     widget.onChanged([...widget.value, ...picked.map((x) => x.path)]);
+  }
+
+  bool _isImage(String path) {
+    final ext = p.extension(path).toLowerCase();
+    return const {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.heic'}
+        .contains(ext);
   }
 
   void _remove(String path) {
@@ -68,7 +86,7 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              PhosphorIcons.image(),
+              widget.config.emptyIcon ?? PhosphorIcons.image(),
               size: 40,
               color: AppColors.textSecondary,
             ),
@@ -141,12 +159,37 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
   }
 
   Widget _tile(String path) {
+    final isImage = widget.config.source == UploadSource.images || _isImage(path);
     return Stack(
       fit: StackFit.expand,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
-          child: Image.file(File(path), fit: BoxFit.cover),
+          child: isImage
+              ? Image.file(File(path), fit: BoxFit.cover)
+              : Container(
+                  color: FormTokens.fieldBg,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(PhosphorIcons.fileText(),
+                          size: 32, color: AppColors.textSecondary),
+                      const SizedBox(height: 6),
+                      Text(
+                        p.basename(path),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
         Positioned(
           top: 4,

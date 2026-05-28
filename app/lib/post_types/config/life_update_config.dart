@@ -1,35 +1,25 @@
 import 'field_config.dart';
 import 'post_type_config.dart';
 
-const PostTypeConfig storyConfig = PostTypeConfig(
-  typeKey: 'story',
-  displayName: 'Story',
-  headerTitle: 'New Story',
-  submittedMessage: 'Story posted',
+const PostTypeConfig lifeUpdateConfig = PostTypeConfig(
+  typeKey: 'life_update',
+  displayName: 'Life Update',
+  headerTitle: 'New Life Update',
+  submittedMessage: 'Life update posted',
   fields: [
     VoiceNotesConfig(
       key: 'recording',
-      recordTitle: 'Recording a memory...',
-      addLabel: 'Record story',
+      recordTitle: 'Recording an update...',
+      addLabel: 'Record update',
       highlighted: true,
       subtitle: 'We will transcribe it for you',
     ),
-    TextFieldConfig(
-      key: 'title',
-      label: 'Title*',
-      hint: 'Give it a name',
-      optional: false,
-    ),
     TextAreaConfig(
-      key: 'story',
-      label: 'Story*',
-      hint: 'Tell it like you’d tell it at the table',
+      key: 'update',
+      label: 'What’s new?*',
+      hint: 'Describe the update',
       optional: false,
-      height: 160,
-    ),
-    PhotoUploadConfig(
-      key: 'photos',
-      label: 'Photos (optional)',
+      height: 140,
     ),
     VoiceNotesConfig(
       key: 'voiceNotes',
@@ -39,7 +29,7 @@ const PostTypeConfig storyConfig = PostTypeConfig(
     ),
     TagsConfig(
       key: 'tags',
-      label: 'Tags (optional)',
+      label: 'Tags',
       hint: 'Add a tag and press Enter',
     ),
     FamilyConfig(

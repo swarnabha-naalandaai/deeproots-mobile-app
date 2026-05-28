@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import '../models/recorded_voice_note.dart';
 
 sealed class FieldConfig {
@@ -56,9 +57,13 @@ class TextAreaConfig extends FieldConfig {
   bool hasValue(Object? value) => value is String && value.trim().isNotEmpty;
 }
 
+enum UploadSource { images, files }
+
 class PhotoUploadConfig extends FieldConfig {
   final String emptyTitle;
   final String emptySubtitle;
+  final IconData? emptyIcon;
+  final UploadSource source;
 
   const PhotoUploadConfig({
     required super.key,
@@ -66,6 +71,8 @@ class PhotoUploadConfig extends FieldConfig {
     super.optional,
     this.emptyTitle = 'Drag & drop a photo here',
     this.emptySubtitle = 'or click to choose',
+    this.emptyIcon,
+    this.source = UploadSource.images,
   });
 
   @override
@@ -78,6 +85,8 @@ class PhotoUploadConfig extends FieldConfig {
 class VoiceNotesConfig extends FieldConfig {
   final String recordTitle;
   final String addLabel;
+  final bool highlighted;
+  final String? subtitle;
 
   const VoiceNotesConfig({
     required super.key,
@@ -85,6 +94,8 @@ class VoiceNotesConfig extends FieldConfig {
     super.optional,
     this.recordTitle = 'Recording voice note...',
     this.addLabel = 'Add voice note',
+    this.highlighted = false,
+    this.subtitle,
   });
 
   @override

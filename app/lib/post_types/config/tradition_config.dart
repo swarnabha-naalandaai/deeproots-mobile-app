@@ -1,31 +1,37 @@
 import 'field_config.dart';
 import 'post_type_config.dart';
 
-const PostTypeConfig storyConfig = PostTypeConfig(
-  typeKey: 'story',
-  displayName: 'Story',
-  headerTitle: 'New Story',
-  submittedMessage: 'Story posted',
+const PostTypeConfig traditionConfig = PostTypeConfig(
+  typeKey: 'tradition',
+  displayName: 'Tradition',
+  headerTitle: 'New Tradition',
+  submittedMessage: 'Tradition posted',
   fields: [
     VoiceNotesConfig(
       key: 'recording',
-      recordTitle: 'Recording a memory...',
+      recordTitle: 'Recording a tradition...',
       addLabel: 'Record story',
       highlighted: true,
       subtitle: 'We will transcribe it for you',
     ),
     TextFieldConfig(
-      key: 'title',
-      label: 'Title*',
-      hint: 'Give it a name',
+      key: 'name',
+      label: 'Name*',
+      hint: 'What is it called?',
+      optional: false,
+    ),
+    TextFieldConfig(
+      key: 'frequency',
+      label: 'When does it happen?*',
+      hint: 'e.g., every year on Diwali',
       optional: false,
     ),
     TextAreaConfig(
-      key: 'story',
-      label: 'Story*',
+      key: 'description',
+      label: 'Describe the tradition*',
       hint: 'Tell it like you’d tell it at the table',
       optional: false,
-      height: 160,
+      height: 172,
     ),
     PhotoUploadConfig(
       key: 'photos',
@@ -39,7 +45,7 @@ const PostTypeConfig storyConfig = PostTypeConfig(
     ),
     TagsConfig(
       key: 'tags',
-      label: 'Tags (optional)',
+      label: 'Tags',
       hint: 'Add a tag and press Enter',
     ),
     FamilyConfig(

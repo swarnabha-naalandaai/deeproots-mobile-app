@@ -1,31 +1,24 @@
 import 'field_config.dart';
 import 'post_type_config.dart';
 
-const PostTypeConfig storyConfig = PostTypeConfig(
-  typeKey: 'story',
-  displayName: 'Story',
-  headerTitle: 'New Story',
-  submittedMessage: 'Story posted',
+const PostTypeConfig photoAlbumConfig = PostTypeConfig(
+  typeKey: 'photo_album',
+  displayName: 'Photo Album',
+  headerTitle: 'New Photo Album',
+  submittedMessage: 'Photo album posted',
   fields: [
-    VoiceNotesConfig(
-      key: 'recording',
-      recordTitle: 'Recording a memory...',
-      addLabel: 'Record story',
-      highlighted: true,
-      subtitle: 'We will transcribe it for you',
-    ),
     TextFieldConfig(
       key: 'title',
-      label: 'Title*',
-      hint: 'Give it a name',
+      label: 'Album title*',
+      hint: 'What is it called?',
       optional: false,
     ),
     TextAreaConfig(
-      key: 'story',
-      label: 'Story*',
-      hint: 'Tell it like you’d tell it at the table',
+      key: 'description',
+      label: 'Description*',
+      hint: 'Describe what these photos are about',
       optional: false,
-      height: 160,
+      height: 143,
     ),
     PhotoUploadConfig(
       key: 'photos',
@@ -39,7 +32,7 @@ const PostTypeConfig storyConfig = PostTypeConfig(
     ),
     TagsConfig(
       key: 'tags',
-      label: 'Tags (optional)',
+      label: 'Tags',
       hint: 'Add a tag and press Enter',
     ),
     FamilyConfig(

@@ -53,11 +53,24 @@ class VoiceNotesWidget extends StatelessWidget {
           const SizedBox(height: 12),
         ],
         PillButton(
-          background: FormTokens.fieldBg,
+          background: config.highlighted ? FormTokens.recordBg : FormTokens.fieldBg,
           icon: PhosphorIcons.microphone(),
           label: config.addLabel,
           onTap: () => _record(context),
         ),
+        if (config.subtitle != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            config.subtitle!,
+            style: GoogleFonts.dmSans(
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              height: 20 / 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
         for (final note in value) ...[
           const SizedBox(height: 8),
           VoicePreviewBar(
