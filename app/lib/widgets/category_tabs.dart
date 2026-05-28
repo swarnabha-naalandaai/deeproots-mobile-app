@@ -25,6 +25,7 @@ class CategoryTabs extends StatelessWidget {
       _Tab(PostType.tradition, 'Traditions', PhosphorIcons.lampPendant()),
       _Tab(PostType.photoAlbum, 'Photo Albums', PhosphorIcons.images()),
       _Tab(PostType.document, 'Documents', PhosphorIcons.files()),
+      _Tab(PostType.lifeUpdate, 'Life Updates', PhosphorIcons.notePencil()),
     ];
 
     return ListView.separated(
@@ -61,7 +62,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = active ? Colors.white : AppColors.textTertiary;
-    final bg = active ? AppColors.textTertiary : AppColors.chipBg;
+    final bg = active ? AppColors.ink : AppColors.chipBg;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(9999),

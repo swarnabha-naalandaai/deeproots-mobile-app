@@ -14,13 +14,6 @@ class AppTypography {
 
   static TextStyle appBarTitle = logo;
 
-  static TextStyle cardTitleLarge = GoogleFonts.dmSans(
-    fontSize: 20,
-    fontWeight: FontWeight.w700,
-    height: 1.1,
-    color: AppColors.textPrimary,
-  );
-
   static TextStyle cardTitle = GoogleFonts.dmSans(
     fontSize: 16,
     fontWeight: FontWeight.w700,
@@ -71,7 +64,7 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  static TextStyle typePill = GoogleFonts.dmSans(
+  static TextStyle counterPill = GoogleFonts.dmSans(
     fontSize: 12,
     fontWeight: FontWeight.w700,
     height: 16 / 12,
@@ -79,12 +72,20 @@ class AppTypography {
     color: Colors.white,
   );
 
-  static TextStyle tagPill = GoogleFonts.dmSans(
+  static TextStyle typePill = GoogleFonts.dmSans(
     fontSize: 12,
     fontWeight: FontWeight.w700,
     height: 16 / 12,
+    letterSpacing: 0.06 * 12,
+    color: AppColors.typePillText,
+  );
+
+  static TextStyle tagPill = GoogleFonts.dmSans(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 16 / 12,
     letterSpacing: 0.02 * 12,
-    color: Colors.white,
+    color: AppColors.textSecondary,
   );
 
   static TextStyle tabLabel = GoogleFonts.dmSans(
@@ -131,11 +132,4 @@ class AppTypography {
     color: AppColors.ink,
   );
 
-  static TextStyle plusCount = GoogleFonts.dmSans(
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    height: 42 / 32,
-    letterSpacing: 0.2 * 32,
-    color: Colors.white,
-  );
 }

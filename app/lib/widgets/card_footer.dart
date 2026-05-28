@@ -17,12 +17,21 @@ class CardFooter extends StatelessWidget {
       children: [
         Container(height: 1, color: AppColors.divider),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child: SizedBox(
             height: 24,
             child: Row(
               children: [
                 _CountIcon(icon: PhosphorIcons.heart(), value: likes),
+                const SizedBox(width: 8),
+                Container(
+                  width: 2,
+                  height: 2,
+                  decoration: const BoxDecoration(
+                    color: AppColors.textSecondary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 _CountIcon(
                   icon: PhosphorIcons.chatDots(),

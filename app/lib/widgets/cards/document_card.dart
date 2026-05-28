@@ -16,14 +16,14 @@ class DocumentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.cardBackground,
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CardHeader(post: post),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(post.title, style: AppTypography.cardTitleLarge),
+            child: Text(post.title, style: AppTypography.cardTitle),
           ),
           const SizedBox(height: 10),
           Padding(

@@ -9,11 +9,12 @@ class TagPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.maroon,
-        borderRadius: BorderRadius.circular(5434),
+        color: Colors.transparent,
+        border: Border.all(color: AppColors.tagBorder, width: 1),
+        borderRadius: BorderRadius.circular(8),
       ),
       alignment: Alignment.center,
       child: Text(label, style: AppTypography.tagPill),
@@ -28,7 +29,7 @@ class TagRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 24,
+      height: 28,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: tags.length,

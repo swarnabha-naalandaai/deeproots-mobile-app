@@ -76,10 +76,10 @@ class _WaveformPlayerState extends State<WaveformPlayer> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 62,
-      padding: const EdgeInsets.all(8),
+      height: 54,
+      padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
       decoration: BoxDecoration(
-        color: AppColors.brownLight,
+        color: AppColors.typePillBg.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(9999),
       ),
       child: Row(
@@ -90,7 +90,7 @@ class _WaveformPlayerState extends State<WaveformPlayer> {
               width: 46,
               height: 46,
               decoration: const BoxDecoration(
-                color: AppColors.brown,
+                color: AppColors.typePillText,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -150,8 +150,8 @@ class _WaveformPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final activeColor = AppColors.brown;
-    const inactiveColor = AppColors.textTertiary;
+    final activeColor = AppColors.typePillText;
+    const inactiveColor = AppColors.textSecondary;
     final paint = Paint()
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 2;

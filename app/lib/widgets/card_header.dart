@@ -68,11 +68,11 @@ class _TypePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.brown,
-        borderRadius: BorderRadius.circular(9999),
+        color: AppColors.typePillBg,
+        borderRadius: BorderRadius.circular(4),
       ),
       alignment: Alignment.center,
       child: Text(label, style: AppTypography.typePill),

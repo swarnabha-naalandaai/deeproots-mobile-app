@@ -1,4 +1,4 @@
-enum PostType { recipe, story, document, tradition, photoAlbum }
+enum PostType { recipe, story, document, tradition, photoAlbum, lifeUpdate }
 
 extension PostTypeLabel on PostType {
   String get label => switch (this) {
@@ -7,6 +7,7 @@ extension PostTypeLabel on PostType {
         PostType.document => 'DOCUMENT',
         PostType.tradition => 'TRADITION',
         PostType.photoAlbum => 'PHOTO ALBUM',
+        PostType.lifeUpdate => 'LIFE UPDATE',
       };
 }
 
@@ -136,14 +137,33 @@ class TraditionPost extends FeedPost {
   PostType get type => PostType.tradition;
 }
 
+class LifeUpdatePost extends FeedPost {
+  final String body;
+  final String? audioUrl;
+  final Duration? audioDuration;
+  final String? transcription;
+
+  const LifeUpdatePost({
+    required super.id,
+    required super.authorName,
+    required super.timestamp,
+    required this.body,
+    this.audioUrl,
+    this.audioDuration,
+    this.transcription,
+    super.tags,
+    super.likes,
+    super.comments,
+  });
+
+  @override
+  PostType get type => PostType.lifeUpdate;
+}
+
 class PhotoAlbumPost extends FeedPost {
   final List<String> images;
-  final int extraCount;
   final String title;
   final String description;
-  final int ingredientsCount;
-  final int stepsCount;
-  final bool hasVoiceNote;
 
   const PhotoAlbumPost({
     required super.id,
@@ -152,10 +172,6 @@ class PhotoAlbumPost extends FeedPost {
     required this.images,
     required this.title,
     required this.description,
-    this.extraCount = 0,
-    this.ingredientsCount = 0,
-    this.stepsCount = 0,
-    this.hasVoiceNote = false,
     super.tags,
     super.likes,
     super.comments,
@@ -170,6 +186,15 @@ const _img2 = 'https://picsum.photos/seed/scooter/800/600';
 const _img3 = 'https://picsum.photos/seed/rangoli-diya/600/600';
 const _img4 = 'https://picsum.photos/seed/diwali-lamps/600/600';
 const _img5 = 'https://picsum.photos/seed/rangoli3/600/600';
+const _img6 = 'https://picsum.photos/seed/bhopal-lake/800/600';
+const _img7 = 'https://picsum.photos/seed/sanchi-stupa/800/600';
+const _img8 = 'https://picsum.photos/seed/upper-lake/800/600';
+const _img9 = 'https://picsum.photos/seed/bhopal-street/800/600';
+const _img10 = 'https://picsum.photos/seed/family-car/800/600';
+const _img11 = 'https://picsum.photos/seed/sunset-mp/800/600';
+const _img12 = 'https://picsum.photos/seed/old-fort/800/600';
+const _img13 = 'https://picsum.photos/seed/market-mp/800/600';
+const _img14 = 'https://picsum.photos/seed/bhopal-night/800/600';
 
 final List<FeedPost> mockFeed = [
   RecipePost(
@@ -231,18 +256,44 @@ final List<FeedPost> mockFeed = [
     likes: 9,
     comments: 4,
   ),
+  LifeUpdatePost(
+    id: 'l1',
+    authorName: 'Didi',
+    timestamp: '5 hours ago',
+    body:
+        'Aaj Riya ne school mein apna pehla solo dance perform kiya — Kathak. Sab ne taali bajaayi. Mummy ki aankhein bhar aayin. Recording attached, please sun lena Daadi.',
+    audioUrl:
+        'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3',
+    audioDuration: Duration(seconds: 42),
+    transcription:
+        'Aaj Riya ne school mein apna pehla solo dance perform kiya. Sab ne taali bajaayi.',
+    tags: ['Riya', 'Dance', 'School'],
+    likes: 12,
+    comments: 3,
+  ),
   PhotoAlbumPost(
     id: 'p1',
     authorName: 'Papa',
     timestamp: '2 days ago',
-    images: [_img4, _img5, _img1, _img2, _img3, _img1, _img2],
-    extraCount: 5,
+    images: [
+      _img6,
+      _img7,
+      _img8,
+      _img9,
+      _img10,
+      _img11,
+      _img12,
+      _img13,
+      _img14,
+      _img4,
+      _img5,
+      _img1,
+      _img2,
+      _img3,
+    ],
     title: 'Bhopal Trip',
     description:
         'Three days, one car, six people. Sanchi was the highlight — the kids actually quiet for an hour. Upper Lake at sunset was unreal.',
-    ingredientsCount: 8,
-    stepsCount: 5,
-    hasVoiceNote: true,
     tags: ['Bhopal', 'Family'],
     likes: 9,
     comments: 4,

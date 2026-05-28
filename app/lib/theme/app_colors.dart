@@ -20,6 +20,10 @@ class AppColors {
 
   static const Color maroon = Color(0xFF7E2525);
 
+  static const Color typePillBg = Color(0xFFE5E1CA);
+  static const Color typePillText = Color(0xFFA07A23);
+  static const Color tagBorder = Color(0xFFD3D2CE);
+
   static const Color accent = brown;
   static const Color overlay = Color(0xCCFFFFFF);
 }

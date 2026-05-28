@@ -33,7 +33,7 @@ class StoryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(post.title, style: AppTypography.cardTitleLarge),
+                Text(post.title, style: AppTypography.cardTitle),
                 const SizedBox(height: 16),
                 WaveformPlayer(audioUrl: post.audioUrl, duration: post.duration),
                 const SizedBox(height: 12),

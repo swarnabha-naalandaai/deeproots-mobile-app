@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/feed_post.dart';
 import 'cards/document_card.dart';
+import 'cards/life_update_card.dart';
 import 'cards/photo_album_card.dart';
 import 'cards/recipe_card.dart';
 import 'cards/story_card.dart';
@@ -18,6 +19,7 @@ class FeedCard extends StatelessWidget {
       final DocumentPost p => DocumentCard(post: p),
       final TraditionPost p => TraditionCard(post: p),
       final PhotoAlbumPost p => PhotoAlbumCard(post: p),
+      final LifeUpdatePost p => LifeUpdateCard(post: p),
     };
   }
 }
