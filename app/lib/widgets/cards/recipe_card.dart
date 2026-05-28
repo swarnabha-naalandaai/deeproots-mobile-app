@@ -8,6 +8,7 @@ import '../card_footer.dart';
 import '../card_header.dart';
 import '../expandable_text.dart';
 import '../tag_pill.dart';
+import '../tagged_people_sheet.dart';
 import '../video_player_widget.dart';
 
 class RecipeCard extends StatelessWidget {
@@ -24,7 +25,12 @@ class RecipeCard extends StatelessWidget {
         children: [
           CardHeader(post: post),
           const SizedBox(height: 12),
-          _Media(url: post.coverUrl, isVideo: post.isVideo, videoUrl: post.videoUrl),
+          _Media(
+            url: post.coverUrl,
+            isVideo: post.isVideo,
+            videoUrl: post.videoUrl,
+            taggedPeople: post.taggedPeople,
+          ),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -58,7 +64,13 @@ class _Media extends StatelessWidget {
   final String url;
   final bool isVideo;
   final String? videoUrl;
-  const _Media({required this.url, required this.isVideo, this.videoUrl});
+  final List<String> taggedPeople;
+  const _Media({
+    required this.url,
+    required this.isVideo,
+    this.videoUrl,
+    this.taggedPeople = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,16 +87,22 @@ class _Media extends StatelessWidget {
           Positioned(
             left: 10,
             bottom: 8,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: AppColors.ink,
-                shape: BoxShape.circle,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: taggedPeople.isEmpty
+                  ? null
+                  : () => TaggedPeopleSheet.show(context, taggedPeople),
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: AppColors.ink,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(PhosphorIcons.userCircle(PhosphorIconsStyle.fill),
+                    size: 16, color: Colors.white),
               ),
-              alignment: Alignment.center,
-              child: Icon(PhosphorIcons.userCircle(PhosphorIconsStyle.fill),
-                  size: 16, color: Colors.white),
             ),
           ),
         ],

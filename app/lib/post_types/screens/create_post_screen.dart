@@ -8,8 +8,15 @@ import '../widgets/form_renderer.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final PostTypeConfig config;
+  final Map<String, dynamic>? initialValues;
+  final String? headerOverride;
 
-  const CreatePostScreen({super.key, required this.config});
+  const CreatePostScreen({
+    super.key,
+    required this.config,
+    this.initialValues,
+    this.headerOverride,
+  });
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -21,8 +28,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialValues;
     _values = {
-      for (final f in widget.config.fields) f.key: f.defaultValue(),
+      for (final f in widget.config.fields)
+        f.key: initial != null && initial.containsKey(f.key)
+            ? initial[f.key]
+            : f.defaultValue(),
     };
   }
 
@@ -100,7 +111,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           Expanded(
             child: Center(
               child: Text(
-                widget.config.headerTitle,
+                widget.headerOverride ?? widget.config.headerTitle,
                 style: GoogleFonts.dmSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

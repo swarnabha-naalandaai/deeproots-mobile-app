@@ -16,16 +16,20 @@ sealed class FeedPost {
   final String authorName;
   final String timestamp;
   final List<String> tags;
+  final List<String> taggedPeople;
   final int likes;
   final int comments;
+  final bool isMine;
 
   const FeedPost({
     required this.id,
     required this.authorName,
     required this.timestamp,
     this.tags = const [],
+    this.taggedPeople = const [],
     this.likes = 0,
     this.comments = 0,
+    this.isMine = false,
   });
 
   PostType get type;
@@ -56,8 +60,10 @@ class RecipePost extends FeedPost {
     this.stepsCount = 0,
     this.hasVoiceNote = false,
     super.tags,
+    super.taggedPeople,
     super.likes,
     super.comments,
+    super.isMine,
   });
 
   @override
@@ -81,8 +87,10 @@ class StoryPost extends FeedPost {
     required this.duration,
     required this.transcription,
     super.tags,
+    super.taggedPeople,
     super.likes,
     super.comments,
+    super.isMine,
   });
 
   @override
@@ -102,8 +110,10 @@ class DocumentPost extends FeedPost {
     required this.description,
     required this.fileName,
     super.tags,
+    super.taggedPeople,
     super.likes,
     super.comments,
+    super.isMine,
   });
 
   @override
@@ -129,8 +139,10 @@ class TraditionPost extends FeedPost {
     this.firstIsVideo = false,
     this.videoUrl,
     super.tags,
+    super.taggedPeople,
     super.likes,
     super.comments,
+    super.isMine,
   });
 
   @override
@@ -152,8 +164,10 @@ class LifeUpdatePost extends FeedPost {
     this.audioDuration,
     this.transcription,
     super.tags,
+    super.taggedPeople,
     super.likes,
     super.comments,
+    super.isMine,
   });
 
   @override
@@ -173,8 +187,10 @@ class PhotoAlbumPost extends FeedPost {
     required this.title,
     required this.description,
     super.tags,
+    super.taggedPeople,
     super.likes,
     super.comments,
+    super.isMine,
   });
 
   @override
@@ -211,8 +227,10 @@ final List<FeedPost> mockFeed = [
     stepsCount: 5,
     hasVoiceNote: true,
     tags: ['Daadi', 'Delhi', 'Recipe'],
+    taggedPeople: ['Daadi', 'Papa', 'Riya'],
     likes: 9,
     comments: 4,
+    isMine: true,
   ),
   StoryPost(
     id: 's1',
@@ -270,6 +288,7 @@ final List<FeedPost> mockFeed = [
     tags: ['Riya', 'Dance', 'School'],
     likes: 12,
     comments: 3,
+    isMine: true,
   ),
   PhotoAlbumPost(
     id: 'p1',
@@ -297,5 +316,6 @@ final List<FeedPost> mockFeed = [
     tags: ['Bhopal', 'Family'],
     likes: 9,
     comments: 4,
+    isMine: true,
   ),
 ];
