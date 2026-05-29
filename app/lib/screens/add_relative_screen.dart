@@ -33,6 +33,18 @@ class _AddRelativeScreenState extends State<AddRelativeScreen> {
   int _genderIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.relation == Relation.spouse && widget.pronounPossessive == 'her') {
+      _genderIndex = 1; // Default to Husband when adding spouse to a woman (pronounPossessive is 'her')
+    } else if (widget.relation == Relation.father || widget.relation == Relation.grandfather) {
+      _genderIndex = 1; // Default to Father/Grandfather bifurcation when adding father/grandfather
+    } else {
+      _genderIndex = 0; // Default to Mother/Wife/etc. (optA)
+    }
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();

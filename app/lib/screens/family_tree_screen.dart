@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/family_member.dart';
-import '../models/family_tree_mock.dart';
+import '../models/family_tree_state.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/family/add_node.dart';
 import '../widgets/family/connector_lines.dart';
@@ -40,8 +40,8 @@ class FamilyTreeScreen extends StatefulWidget {
 }
 
 class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
-  static const double _canvasWidth = 412;
-  static const double _canvasHeight = 917;
+  // Pure local state engine!
+  late FamilyTreeState _treeState;
 
   FamilyMember? _selectedMember;
   Offset? _menuPosition;
@@ -53,29 +53,12 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
   List<_SearchEntry> _searchResults = [];
   bool _isSearching = false;
 
-  static const Map<String, Offset> _nodePositions = {
-    'anant': Offset(-41 - 17, 167.5),
-    'prerna': Offset(97 - 17, 167.5),
-    'ashish': Offset(107 - 17, 334),
-    'aparna': Offset(240 - 17, 334),
-    'meera': Offset(396 - 17, 334),
-    'riya': Offset(107 - 17, 485),
-  };
-
-  late final List<_SearchEntry> _searchCorpus = [
-    _SearchEntry('cousins', [FamilyTreeMock.meera]),
-    _SearchEntry('first cousins', [FamilyTreeMock.meera]),
-    _SearchEntry('paternal cousins', [FamilyTreeMock.anant, FamilyTreeMock.prerna]),
-    _SearchEntry('maternal cousins', [FamilyTreeMock.aparna]),
-    _SearchEntry('grandparents', [FamilyTreeMock.anant, FamilyTreeMock.prerna]),
-    _SearchEntry('parents', [FamilyTreeMock.ashish, FamilyTreeMock.aparna]),
-    _SearchEntry('siblings', [FamilyTreeMock.riya]),
-    _SearchEntry('uncle', [FamilyTreeMock.ashish]),
-    _SearchEntry('aunt', [FamilyTreeMock.meera]),
-    ...FamilyTreeMock.all
-        .where((m) => !m.isPlaceholder)
-        .map((m) => _SearchEntry(m.name, [m])),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Hydrate the initial state
+    _treeState = FamilyTreeState.initialMock();
+  }
 
   @override
   void dispose() {
@@ -84,7 +67,62 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     super.dispose();
   }
 
+  // Dynamic search corpus based on current members
+  List<_SearchEntry> get _searchCorpus {
+    final corpus = <_SearchEntry>[];
+    
+    // Add default category searches
+    final allReal = _treeState.people.values.where((m) => !m.isPlaceholder).toList();
+    
+    final meera = _treeState.people['meera'];
+    if (meera != null) {
+      corpus.add(_SearchEntry('cousins', [meera]));
+      corpus.add(_SearchEntry('first cousins', [meera]));
+      corpus.add(_SearchEntry('aunt', [meera]));
+    }
+    
+    final anant = _treeState.people['anant'];
+    final prerna = _treeState.people['prerna'];
+    if (anant != null || prerna != null) {
+      final gps = [anant, prerna].whereType<FamilyMember>().toList();
+      corpus.add(_SearchEntry('grandparents', gps));
+      corpus.add(_SearchEntry('paternal grandparents', gps));
+    }
+    
+    final ashish = _treeState.people['ashish'];
+    final aparna = _treeState.people['aparna'];
+    if (ashish != null || aparna != null) {
+      final parents = [ashish, aparna].whereType<FamilyMember>().toList();
+      corpus.add(_SearchEntry('parents', parents));
+    }
+
+    // Add each dynamic member search entry
+    for (final member in allReal) {
+      corpus.add(_SearchEntry(member.name, [member]));
+      final rel = _treeState.relationToSelf(member.id);
+      if (rel.isNotEmpty) {
+        corpus.add(_SearchEntry(rel.toLowerCase(), [member]));
+      }
+    }
+    
+    return corpus;
+  }
+
   void _onNodeTap(FamilyMember member, Offset nodeCanvasTopLeft) {
+    if (member.isPlaceholder) {
+      final childId = member.id.split('_').first; // e.g. 'aparna' from 'aparna_father_p'
+      final child = _treeState.people[childId] ?? _treeState.people['riya']!;
+      
+      _openAddRelative(
+        context,
+        relation: member.relation,
+        fromId: childId,
+        subjectName: child.name,
+        pronounPossessive: _possessiveFor(child),
+      );
+      return;
+    }
+
     final matrix = _transformCtrl.value;
     final scaled = MatrixUtils.transformPoint(matrix, nodeCanvasTopLeft);
     final scale = matrix.getMaxScaleOnAxis();
@@ -99,7 +137,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
         _nodeScreenPosition = scaled;
         _nodeScale = scale;
 
-        final nodeScreenH = 100 * scale;
+        final nodeScreenH = 114 * scale;
         final screenW = MediaQuery.of(context).size.width;
         const menuW = 180.0;
         var dx = scaled.dx;
@@ -118,14 +156,15 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     });
   }
 
-  void _openAddRelative(
+  Future<void> _openAddRelative(
     BuildContext context, {
     required Relation relation,
+    required String fromId,
     String? subjectName,
     String pronounPossessive = 'her',
-  }) {
+  }) async {
     _dismissMenu();
-    Navigator.of(context).push(
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
         builder: (_) => AddRelativeScreen(
           relation: relation,
@@ -134,22 +173,120 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
         ),
       ),
     );
+
+    if (result == null || !mounted) return;
+
+    final String name = result['name'] ?? '';
+    if (name.isEmpty) return;
+
+    Relation targetRelation = relation;
+    final String gender = result['gender'] ?? '';
+    if (relation == Relation.father || relation == Relation.mother) {
+      if (gender == 'Father') {
+        targetRelation = Relation.father;
+      } else if (gender == 'Mother') {
+        targetRelation = Relation.mother;
+      }
+    } else if (relation == Relation.grandfather || relation == Relation.grandmother) {
+      if (gender == 'Father') {
+        targetRelation = Relation.grandfather;
+      } else if (gender == 'Mother') {
+        targetRelation = Relation.grandmother;
+      }
+    }
+
+    final DateTime? birthDate = result['birthDate'] as DateTime?;
+    final String lifespan = birthDate != null ? '${birthDate.year}-Present' : 'Present';
+
+    setState(() {
+      final newId = 'p_${DateTime.now().millisecondsSinceEpoch}';
+      final newMember = FamilyMember(
+        id: newId,
+        name: name,
+        relation: targetRelation,
+        lifespan: lifespan,
+      );
+
+      final newPeople = Map<String, FamilyMember>.from(_treeState.people);
+      newPeople[newId] = newMember;
+
+      final newPartners = List<List<String>>.from(_treeState.partners);
+      final newParentChild = List<List<String>>.from(_treeState.parentChild);
+
+      if (targetRelation == Relation.father || targetRelation == Relation.mother) {
+        newParentChild.add([newId, fromId]);
+        
+        final existingParents = _treeState.getParents(fromId);
+        if (existingParents.isNotEmpty) {
+          newPartners.add([newId, existingParents[0]]);
+        }
+        
+        final renderedState = _treeState.withPlaceholders();
+        final siblings = renderedState.getSiblings(fromId);
+        for (final sibId in siblings) {
+          if (!renderedState.people[sibId]!.isPlaceholder) {
+            newParentChild.add([newId, sibId]);
+          }
+        }
+      } else if (targetRelation == Relation.spouse) {
+        newPartners.add([fromId, newId]);
+      } else if (targetRelation == Relation.child) {
+        newParentChild.add([fromId, newId]);
+        
+        final partners = _treeState.getPartners(fromId);
+        if (partners.isNotEmpty) {
+          newParentChild.add([partners[0], newId]);
+        }
+      } else if (targetRelation == Relation.sibling) {
+        final parents = _treeState.getParents(fromId);
+        for (final pId in parents) {
+          newParentChild.add([pId, newId]);
+        }
+      }
+
+      _treeState = FamilyTreeState(
+        people: newPeople,
+        partners: newPartners,
+        parentChild: newParentChild,
+        meId: _treeState.meId,
+      );
+    });
   }
 
   void _openAddRelativeForMember(BuildContext context, FamilyMember m) {
     _dismissMenu();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: const Color(0x26000000),
-      builder: (_) => FamilyMemberProfileSheet(member: m, initialTab: 1),
+    showFamilyMemberProfileSheet(
+      context,
+      m,
+      initialTab: 1,
+      onAddRelative: (relation, subject) {
+        _openAddRelative(
+          context,
+          relation: relation,
+          fromId: subject.id,
+          subjectName: subject.name,
+          pronounPossessive: _possessiveFor(subject),
+        );
+      },
     );
   }
 
   void _openAddMemory(BuildContext context, FamilyMember m) {
     _dismissMenu();
-    showFamilyMemberProfileSheet(context, m);
+    showFamilyMemberProfileSheet(
+      context,
+      m,
+      initialTab: 0,
+      onAddRelative: (relation, subject) {
+        _openAddRelative(
+          context,
+          relation: relation,
+          fromId: subject.id,
+          subjectName: subject.name,
+          pronounPossessive: _possessiveFor(subject),
+        );
+      },
+    );
   }
 
   void _openViewProfile(BuildContext context, FamilyMember m) {
@@ -158,7 +295,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       MaterialPageRoute(
         builder: (_) => ProfileScreen(
           member: m,
-          isSelf: m.id == FamilyTreeMock.riya.id,
+          isSelf: m.id == _treeState.meId,
         ),
       ),
     );
@@ -191,7 +328,9 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
   }
 
   void _navigateToMember(FamilyMember member) {
-    final pos = _nodePositions[member.id];
+    final renderedState = _treeState.withPlaceholders();
+    final layoutResult = renderedState.getShiftedLayout();
+    final pos = layoutResult.positions[member.id];
     if (pos == null) return;
 
     _searchCtrl.clear();
@@ -202,11 +341,11 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     FocusScope.of(context).unfocus();
 
     final viewSize = MediaQuery.of(context).size;
-    const nodeW = 100.0;
-    const nodeH = 100.0;
-    final targetX = pos.dx + nodeW / 2;
-    final targetY = pos.dy + nodeH / 2;
-    final scale = 1.5;
+    const nodeW = 110.0;
+    const nodeH = 114.0;
+    final targetX = pos.x + nodeW / 2;
+    final targetY = pos.y + nodeH / 2;
+    final scale = 1.3;
     final dx = viewSize.width / 2 - targetX * scale;
     final dy = viewSize.height / 2 - targetY * scale;
 
@@ -228,20 +367,56 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     );
   }
 
-  Widget _heart({required double left, required double top}) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Icon(
-        PhosphorIcons.heart(PhosphorIconsStyle.fill),
-        size: 12,
-        color: const Color(0xFF7E2525),
-      ),
-    );
+  String _possessiveFor(FamilyMember m) {
+    switch (m.relation) {
+      case Relation.father:
+      case Relation.grandfather:
+        return 'his';
+      case Relation.mother:
+      case Relation.grandmother:
+        return 'her';
+      default:
+        return 'their';
+    }
+  }
+
+  List<Widget> _buildHearts(FamilyTreeState state, Map<String, Position> positions) {
+    final hearts = <Widget>[];
+    final painted = <String>{};
+    for (final pair in state.partners) {
+      final a = pair[0];
+      final b = pair[1];
+      if (painted.contains('$a-$b') || painted.contains('$b-$a')) continue;
+
+      final pa = positions[a];
+      final pb = positions[b];
+      if (pa == null || pb == null) continue;
+
+      final y = pa.y + 114 / 2 - 6; // Center height minus half heart height
+      final x = (pa.x + pb.x + 110) / 2 - 6; // Midpoint minus half heart width
+
+      hearts.add(
+        Positioned(
+          left: x,
+          top: y,
+          child: Icon(
+            PhosphorIcons.heart(PhosphorIconsStyle.fill),
+            size: 12,
+            color: const Color(0xFF7E2525),
+          ),
+        ),
+      );
+      painted.add('$a-$b');
+    }
+    return hearts;
   }
 
   @override
   Widget build(BuildContext context) {
+    final renderedState = _treeState.withPlaceholders();
+    final layoutResult = renderedState.getShiftedLayout();
+    final positions = layoutResult.positions;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F1F0),
       body: SafeArea(
@@ -259,121 +434,59 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                   const Positioned.fill(child: DotGridBackground()),
 
                   InteractiveViewer(
-                      transformationController: _transformCtrl,
-                      onInteractionStart: (_) {
-                        if (_selectedMember != null) _dismissMenu();
-                      },
-                      minScale: 0.6,
-                      maxScale: 2.5,
-                      constrained: false,
-                      boundaryMargin: const EdgeInsets.all(200),
-                      child: SizedBox(
-                        width: _canvasWidth,
-                        height: _canvasHeight - 60 - 47,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            const Positioned.fill(child: ConnectorLines()),
-
-                            _heart(left: 60, top: 201),
-                            _heart(left: 353, top: 199),
-                            _heart(left: 206, top: 366),
-
-                            Positioned(
-                              left: 130,
-                              top: 158,
-                              child: Icon(
-                                PhosphorIcons.sparkle(PhosphorIconsStyle.fill),
-                                size: 12,
-                                color: const Color(0xFFA07A23),
-                                shadows: const [
-                                  Shadow(
-                                    color: Color(0xFFF6D046),
-                                    blurRadius: 8.4,
-                                    offset: Offset(0, 1),
-                                  ),
-                                ],
-                              ),
+                    transformationController: _transformCtrl,
+                    onInteractionStart: (_) {
+                      if (_selectedMember != null) _dismissMenu();
+                    },
+                    minScale: 0.4,
+                    maxScale: 2.5,
+                    constrained: false,
+                    boundaryMargin: const EdgeInsets.all(400),
+                    child: SizedBox(
+                      // Dynamic size matching the computed tree boundary!
+                      width: layoutResult.width,
+                      height: layoutResult.height,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned.fill(
+                            child: ConnectorLines(
+                              state: renderedState,
+                              positions: positions,
                             ),
+                          ),
 
-                            // Grandparents row (y=167.5).
-                            _nodeAt(
-                              left: -41 - 17,
-                              top: 167.5,
-                              member: FamilyTreeMock.anant,
-                            ),
-                            _nodeAt(
-                              left: 97 - 17,
-                              top: 167.5,
-                              member: FamilyTreeMock.prerna,
-                            ),
-                            Positioned(
-                              left: 251 - 17,
-                              top: 167.5,
-                              child: AddNode(
-                                member: FamilyTreeMock.fatherPlaceholder,
-                                onTap: () => _openAddRelative(
-                                  context,
-                                  relation: Relation.father,
-                                  subjectName: FamilyTreeMock.aparna.name,
-                                  pronounPossessive: 'her',
+                          ..._buildHearts(renderedState, positions),
+
+                          // Dynamically render all nodes at their computed layout coordinates!
+                          ...renderedState.people.values.map((member) {
+                            final pos = positions[member.id];
+                            if (pos == null) return const SizedBox.shrink();
+
+                            if (member.isPlaceholder) {
+                              return Positioned(
+                                left: pos.x,
+                                top: pos.y,
+                                child: AddNode(
+                                  member: member,
+                                  onTap: () => _onNodeTap(member, Offset(pos.x, pos.y)),
                                 ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 391 - 17,
-                              top: 167.5,
-                              child: AddNode(
-                                member: FamilyTreeMock.motherPlaceholder,
-                                onTap: () => _openAddRelative(
-                                  context,
-                                  relation: Relation.mother,
-                                  subjectName: FamilyTreeMock.aparna.name,
-                                  pronounPossessive: 'her',
-                                ),
-                              ),
-                            ),
+                              );
+                            }
 
-                            // Parents row (y=334).
-                            _nodeAt(
-                              left: 107 - 17,
-                              top: 334,
-                              member: FamilyTreeMock.ashish,
-                            ),
-                            _nodeAt(
-                              left: 240 - 17,
-                              top: 334,
-                              member: FamilyTreeMock.aparna,
-                            ),
-                            _nodeAt(
-                              left: 396 - 17,
-                              top: 334,
-                              member: FamilyTreeMock.meera,
-                            ),
-
-                            // Self + sibling (y=485/487).
-                            _nodeAt(
-                              left: 107 - 17,
-                              top: 485,
-                              member: FamilyTreeMock.riya,
-                            ),
-                            Positioned(
-                              left: 240 - 17,
-                              top: 487,
-                              child: AddNode(
-                                member: FamilyTreeMock.siblingPlaceholder,
-                                onTap: () => _openAddRelative(
-                                  context,
-                                  relation: Relation.sibling,
-                                  subjectName: FamilyTreeMock.riya.name,
-                                  pronounPossessive: 'her',
-                                ),
+                            return Positioned(
+                              left: pos.x,
+                              top: pos.y,
+                              child: FamilyNode(
+                                member: member,
+                                onTap: () => _onNodeTap(member, Offset(pos.x, pos.y)),
                               ),
-                            ),
-                          ],
-                        ),
+                            );
+                          }),
+                        ],
                       ),
                     ),
+                  ),
 
                   const Positioned(
                     left: 0,
@@ -414,20 +527,20 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                         scale: _nodeScale,
                         alignment: Alignment.topLeft,
                         child: FamilyNodeMenu(
-                        member: _selectedMember!,
-                        onAddRelative: () =>
-                            _openAddRelativeForMember(context, _selectedMember!),
-                        onViewTree: () {
-                          _dismissMenu();
-                          _snack(context, 'View tree');
-                        },
-                        onAddMemory: () =>
-                            _openAddMemory(context, _selectedMember!),
-                        onViewProfile: () =>
-                            _openViewProfile(context, _selectedMember!),
-                        onDismiss: _dismissMenu,
+                          member: _selectedMember!,
+                          onAddRelative: () =>
+                              _openAddRelativeForMember(context, _selectedMember!),
+                          onViewTree: () {
+                            _dismissMenu();
+                            _snack(context, 'View tree');
+                          },
+                          onAddMemory: () =>
+                              _openAddMemory(context, _selectedMember!),
+                          onViewProfile: () =>
+                              _openViewProfile(context, _selectedMember!),
+                          onDismiss: _dismissMenu,
+                        ),
                       ),
-                    ),
                     ),
 
                   // Floating add button.
@@ -439,8 +552,9 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                         onTap: () => _openAddRelative(
                           context,
                           relation: Relation.child,
-                          subjectName: FamilyTreeMock.riya.name,
-                          pronounPossessive: 'her',
+                          fromId: _treeState.meId!,
+                          subjectName: _treeState.people[_treeState.meId!]!.name,
+                          pronounPossessive: _possessiveFor(_treeState.people[_treeState.meId!]!),
                         ),
                         child: Container(
                           width: 56,
@@ -510,21 +624,6 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _nodeAt({
-    required double left,
-    required double top,
-    required FamilyMember member,
-  }) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: FamilyNode(
-        member: member,
-        onTap: () => _onNodeTap(member, Offset(left, top)),
       ),
     );
   }

@@ -59,6 +59,31 @@ class FamilyNode extends StatelessWidget {
       );
     }
 
+    if (member.deceased && !member.isPlaceholder) {
+      avatar = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          avatar,
+          Positioned(
+            left: (size - 12) / 2,
+            top: -8,
+            child: Icon(
+              PhosphorIcons.sparkle(PhosphorIconsStyle.fill),
+              size: 12,
+              color: const Color(0xFFA07A23),
+              shadows: const [
+                Shadow(
+                  color: Color(0xFFF6D046),
+                  blurRadius: 8.4,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     if (member.badgeCount > 0) {
       avatar = Stack(
         clipBehavior: Clip.none,

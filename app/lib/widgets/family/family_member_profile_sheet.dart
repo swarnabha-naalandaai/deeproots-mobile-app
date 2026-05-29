@@ -47,24 +47,35 @@ const List<_Memory> _seedMemoriesPrerna = [
   ),
 ];
 
-void showFamilyMemberProfileSheet(BuildContext context, FamilyMember member) {
+void showFamilyMemberProfileSheet(
+  BuildContext context,
+  FamilyMember member, {
+  void Function(Relation relation, FamilyMember subject)? onAddRelative,
+  int initialTab = 0,
+}) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: const Color(0x26000000), // rgba(0,0,0,0.15)
-    builder: (_) => FamilyMemberProfileSheet(member: member),
+    builder: (_) => FamilyMemberProfileSheet(
+      member: member,
+      initialTab: initialTab,
+      onAddRelative: onAddRelative,
+    ),
   );
 }
 
 class FamilyMemberProfileSheet extends StatelessWidget {
   final FamilyMember member;
   final int initialTab;
+  final void Function(Relation relation, FamilyMember subject)? onAddRelative;
 
   const FamilyMemberProfileSheet({
     super.key,
     required this.member,
     this.initialTab = 0,
+    this.onAddRelative,
   });
 
   @override
@@ -85,6 +96,7 @@ class FamilyMemberProfileSheet extends StatelessWidget {
             member: member,
             scrollController: scrollController,
             initialTab: initialTab,
+            onAddRelative: onAddRelative,
           ),
         );
       },
@@ -96,11 +108,13 @@ class _ProfileContent extends StatefulWidget {
   final FamilyMember member;
   final ScrollController scrollController;
   final int initialTab;
+  final void Function(Relation relation, FamilyMember subject)? onAddRelative;
 
   const _ProfileContent({
     required this.member,
     required this.scrollController,
     this.initialTab = 0,
+    this.onAddRelative,
   });
 
   @override
@@ -647,15 +661,19 @@ class _ProfileContentState extends State<_ProfileContent> {
     FamilyMember subject,
   ) {
     Navigator.of(context).pop();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AddRelativeScreen(
-          relation: relation,
-          subjectName: _firstName(subject.name),
-          pronounPossessive: _possessiveFor(subject),
+    if (widget.onAddRelative != null) {
+      widget.onAddRelative!(relation, subject);
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AddRelativeScreen(
+            relation: relation,
+            subjectName: _firstName(subject.name),
+            pronounPossessive: _possessiveFor(subject),
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _addSlot(
