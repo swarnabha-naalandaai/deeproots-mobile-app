@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../models/family_member.dart';
 import '../../models/family_tree_mock.dart';
@@ -50,7 +51,9 @@ const List<_Memory> _seedMemoriesPrerna = [
 void showFamilyMemberProfileSheet(
   BuildContext context,
   FamilyMember member, {
+  List<FamilyMember>? allMembers,
   void Function(Relation relation, FamilyMember subject)? onAddRelative,
+  void Function(String selectedId, Relation relation, FamilyMember subject)? onLinkExisting,
   int initialTab = 0,
 }) {
   showModalBottomSheet<void>(
@@ -62,6 +65,8 @@ void showFamilyMemberProfileSheet(
       member: member,
       initialTab: initialTab,
       onAddRelative: onAddRelative,
+      allMembers: allMembers,
+      onLinkExisting: onLinkExisting,
     ),
   );
 }
@@ -70,12 +75,16 @@ class FamilyMemberProfileSheet extends StatelessWidget {
   final FamilyMember member;
   final int initialTab;
   final void Function(Relation relation, FamilyMember subject)? onAddRelative;
+  final List<FamilyMember>? allMembers;
+  final void Function(String selectedId, Relation relation, FamilyMember subject)? onLinkExisting;
 
   const FamilyMemberProfileSheet({
     super.key,
     required this.member,
     this.initialTab = 0,
     this.onAddRelative,
+    this.allMembers,
+    this.onLinkExisting,
   });
 
   @override
@@ -97,6 +106,8 @@ class FamilyMemberProfileSheet extends StatelessWidget {
             scrollController: scrollController,
             initialTab: initialTab,
             onAddRelative: onAddRelative,
+            allMembers: allMembers,
+            onLinkExisting: onLinkExisting,
           ),
         );
       },
@@ -109,12 +120,16 @@ class _ProfileContent extends StatefulWidget {
   final ScrollController scrollController;
   final int initialTab;
   final void Function(Relation relation, FamilyMember subject)? onAddRelative;
+  final List<FamilyMember>? allMembers;
+  final void Function(String selectedId, Relation relation, FamilyMember subject)? onLinkExisting;
 
   const _ProfileContent({
     required this.member,
     required this.scrollController,
     this.initialTab = 0,
     this.onAddRelative,
+    this.allMembers,
+    this.onLinkExisting,
   });
 
   @override
@@ -603,7 +618,7 @@ class _ProfileContentState extends State<_ProfileContent> {
       const SizedBox(height: 24),
       Center(
         child: GestureDetector(
-          onTap: () {},
+          onTap: () => _openLinkExisting(context, m),
           child: const Text(
             'Add an existing person',
             style: TextStyle(
@@ -674,6 +689,160 @@ class _ProfileContentState extends State<_ProfileContent> {
         ),
       );
     }
+  }
+
+  Future<void> _openLinkExisting(BuildContext context, FamilyMember subject) async {
+    final eligible = (widget.allMembers ?? [])
+        .where((p) => p.id != subject.id && !p.isPlaceholder)
+        .toList();
+
+    if (eligible.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No eligible family members available to link.')),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<FamilyMember>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        String filter = '';
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = eligible
+                .where((p) => p.name.toLowerCase().contains(filter.toLowerCase()))
+                .toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Link an existing person',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF191919),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search by name...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        setModalState(() => filter = val);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx2, idx) {
+                          final p = filtered[idx];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFFE7E2D6),
+                              backgroundImage: p.imageAsset != null
+                                  ? AssetImage(p.imageAsset!)
+                                  : null,
+                              child: p.imageAsset == null
+                                  ? const Icon(Icons.person, color: Colors.grey)
+                                  : null,
+                            ),
+                            title: Text(
+                              p.name,
+                              style: GoogleFonts.dmSans(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            subtitle: Text(
+                              p.roleLabel,
+                              style: GoogleFonts.dmSans(fontSize: 13),
+                            ),
+                            onTap: () => Navigator.of(ctx2).pop(p),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (selected == null || !context.mounted) return;
+
+    final relation = await showDialog<Relation>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'How is ${selected.name} related to ${subject.name}?',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _relationOption(ctx, 'Parent (Mother/Father)', Relation.mother),
+              _relationOption(ctx, 'Partner (Wife/Husband)', Relation.spouse),
+              _relationOption(ctx, 'Sibling (Sister/Brother)', Relation.sibling),
+              _relationOption(ctx, 'Child (Daughter/Son)', Relation.child),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (relation != null && widget.onLinkExisting != null && context.mounted) {
+      Navigator.of(context).pop(); // close profile sheet
+      widget.onLinkExisting!(selected.id, relation, subject);
+    }
+  }
+
+  Widget _relationOption(BuildContext ctx, String label, Relation rel) {
+    return ListTile(
+      title: Text(
+        label,
+        style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w500),
+      ),
+      onTap: () => Navigator.of(ctx).pop(rel),
+    );
   }
 
   Widget _addSlot(

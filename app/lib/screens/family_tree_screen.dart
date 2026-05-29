@@ -253,12 +253,60 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     });
   }
 
+  void _handleLinkExisting(String selectedId, Relation relation, FamilyMember subject) {
+    setState(() {
+      final newParentChild = List<List<String>>.from(_treeState.parentChild);
+      final newPartners = List<List<String>>.from(_treeState.partners);
+
+      if (relation == Relation.father || relation == Relation.mother) {
+        if (!newParentChild.any((pc) => pc[0] == selectedId && pc[1] == subject.id)) {
+          newParentChild.add([selectedId, subject.id]);
+        }
+
+        // Auto-heal/sync with siblings
+        final siblings = _treeState.people.values
+            .where((p) => p.relation == Relation.sibling && p.id != subject.id)
+            .map((p) => p.id);
+        for (final sibId in siblings) {
+          if (!newParentChild.any((pc) => pc[0] == selectedId && pc[1] == sibId)) {
+            newParentChild.add([selectedId, sibId]);
+          }
+        }
+      } else if (relation == Relation.child) {
+        if (!newParentChild.any((pc) => pc[0] == subject.id && pc[1] == selectedId)) {
+          newParentChild.add([subject.id, selectedId]);
+        }
+      } else if (relation == Relation.spouse) {
+        if (!newPartners.any((p) => (p[0] == selectedId && p[1] == subject.id) || (p[0] == subject.id && p[1] == selectedId))) {
+          newPartners.add([selectedId, subject.id]);
+        }
+      } else if (relation == Relation.sibling) {
+        final parents = _treeState.parentChild
+            .where((pc) => pc[1] == subject.id)
+            .map((pc) => pc[0])
+            .toList();
+        for (final pId in parents) {
+          if (!newParentChild.any((pc) => pc[0] == pId && pc[1] == selectedId)) {
+            newParentChild.add([pId, selectedId]);
+          }
+        }
+      }
+
+      _treeState = _treeState.copyWith(
+        parentChild: newParentChild,
+        partners: newPartners,
+      );
+    });
+  }
+
   void _openAddRelativeForMember(BuildContext context, FamilyMember m) {
     _dismissMenu();
     showFamilyMemberProfileSheet(
       context,
       m,
       initialTab: 1,
+      allMembers: _treeState.people.values.toList(),
+      onLinkExisting: _handleLinkExisting,
       onAddRelative: (relation, subject) {
         _openAddRelative(
           context,
@@ -277,6 +325,8 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       context,
       m,
       initialTab: 0,
+      allMembers: _treeState.people.values.toList(),
+      onLinkExisting: _handleLinkExisting,
       onAddRelative: (relation, subject) {
         _openAddRelative(
           context,
