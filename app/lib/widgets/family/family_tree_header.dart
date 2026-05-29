@@ -5,12 +5,16 @@ class FamilyTreeHeader extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onMenu;
   final ValueChanged<String>? onSearch;
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchChanged;
 
   const FamilyTreeHeader({
     super.key,
     this.onBack,
     this.onMenu,
     this.onSearch,
+    this.searchController,
+    this.onSearchChanged,
   });
 
   @override
@@ -55,12 +59,14 @@ class FamilyTreeHeader extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
+                        controller: searchController,
+                        onChanged: onSearchChanged,
                         onSubmitted: onSearch,
                         style: const TextStyle(
                           fontFamily: 'DM Sans',
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          letterSpacing: 14 * 0.06,
+                          letterSpacing: 16 * 0.06,
                           color: Color(0xFF1D1E09),
                         ),
                         decoration: const InputDecoration(
@@ -69,10 +75,10 @@ class FamilyTreeHeader extends StatelessWidget {
                           hintText: 'Search “cousins”, “Delhi”, “1990s”',
                           hintStyle: TextStyle(
                             fontFamily: 'DM Sans',
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF949494),
-                            letterSpacing: 14 * 0.06,
+                            letterSpacing: 16 * 0.06,
                           ),
                         ),
                       ),

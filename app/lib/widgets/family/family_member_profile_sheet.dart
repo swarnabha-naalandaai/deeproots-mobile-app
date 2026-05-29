@@ -59,8 +59,13 @@ void showFamilyMemberProfileSheet(BuildContext context, FamilyMember member) {
 
 class FamilyMemberProfileSheet extends StatelessWidget {
   final FamilyMember member;
+  final int initialTab;
 
-  const FamilyMemberProfileSheet({super.key, required this.member});
+  const FamilyMemberProfileSheet({
+    super.key,
+    required this.member,
+    this.initialTab = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +84,7 @@ class FamilyMemberProfileSheet extends StatelessWidget {
           child: _ProfileContent(
             member: member,
             scrollController: scrollController,
+            initialTab: initialTab,
           ),
         );
       },
@@ -89,20 +95,26 @@ class FamilyMemberProfileSheet extends StatelessWidget {
 class _ProfileContent extends StatefulWidget {
   final FamilyMember member;
   final ScrollController scrollController;
+  final int initialTab;
 
-  const _ProfileContent({required this.member, required this.scrollController});
+  const _ProfileContent({
+    required this.member,
+    required this.scrollController,
+    this.initialTab = 0,
+  });
 
   @override
   State<_ProfileContent> createState() => _ProfileContentState();
 }
 
 class _ProfileContentState extends State<_ProfileContent> {
-  int _tabIndex = 0;
+  late int _tabIndex;
   late List<_Memory> _memories;
 
   @override
   void initState() {
     super.initState();
+    _tabIndex = widget.initialTab;
     _memories = widget.member.id == 'prerna'
         ? List.of(_seedMemoriesPrerna)
         : <_Memory>[];
