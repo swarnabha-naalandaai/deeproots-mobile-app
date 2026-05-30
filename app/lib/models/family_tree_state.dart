@@ -608,7 +608,26 @@ class FamilyTreeState {
       widthOf(rid);
     }
 
+    // Root that contains meId via the primaryParent chain. Keeping that root
+    // leftmost prevents subtree flips when an ancestor is added above meId.
+    String? meRoot;
+    if (meId != null && anchorOf[meId] != null) {
+      String? cur = anchorOf[meId];
+      while (cur != null) {
+        final anc = anchors[cur]!;
+        if (anc.primaryParent == null) {
+          meRoot = cur;
+          break;
+        }
+        cur = anc.primaryParent;
+      }
+    }
+
     rootAids.sort((a, b) {
+      if (meRoot != null) {
+        if (a == meRoot && b != meRoot) return -1;
+        if (b == meRoot && a != meRoot) return 1;
+      }
       final da = anchors[a]!.ids.map((p) => dist[p] ?? 999).reduce(min);
       final db = anchors[b]!.ids.map((p) => dist[p] ?? 999).reduce(min);
       return da.compareTo(db);
