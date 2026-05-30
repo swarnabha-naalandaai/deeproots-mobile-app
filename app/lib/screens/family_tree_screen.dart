@@ -48,6 +48,9 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
   Offset? _nodeScreenPosition;
   double _nodeScale = 1.0;
 
+  String? _lineageRootId;
+  Set<String> _lineageIds = const {};
+
   final TransformationController _transformCtrl = TransformationController();
   final TextEditingController _searchCtrl = TextEditingController();
   List<_SearchEntry> _searchResults = [];
@@ -128,6 +131,8 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     final scale = matrix.getMaxScaleOnAxis();
 
     setState(() {
+      _lineageRootId = null;
+      _lineageIds = const {};
       if (_selectedMember?.id == member.id) {
         _selectedMember = null;
         _menuPosition = null;
@@ -153,6 +158,32 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       _selectedMember = null;
       _menuPosition = null;
       _nodeScreenPosition = null;
+    });
+  }
+
+  void _showLineageFor(FamilyMember member) {
+    final ids = <String>{member.id};
+    ids.addAll(_treeState.getAncestors(member.id));
+    ids.addAll(_treeState.getDescendants(member.id));
+    ids.addAll(_treeState.getPartners(member.id));
+    ids.removeWhere((id) {
+      final m = _treeState.people[id];
+      return m == null || m.isPlaceholder;
+    });
+    setState(() {
+      _selectedMember = null;
+      _menuPosition = null;
+      _nodeScreenPosition = null;
+      _lineageRootId = member.id;
+      _lineageIds = ids;
+    });
+  }
+
+  void _clearLineage() {
+    if (_lineageRootId == null) return;
+    setState(() {
+      _lineageRootId = null;
+      _lineageIds = const {};
     });
   }
 
@@ -503,6 +534,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                             child: ConnectorLines(
                               state: renderedState,
                               positions: positions,
+                              lineageIds: _lineageIds,
                             ),
                           ),
 
@@ -529,6 +561,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                               top: pos.y,
                               child: FamilyNode(
                                 member: member,
+                                highlighted: _lineageRootId == member.id,
                                 onTap: () => _onNodeTap(member, Offset(pos.x, pos.y)),
                               ),
                             );
@@ -544,6 +577,42 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                     bottom: 0,
                     child: TimeTravelBar(),
                   ),
+
+                  if (_lineageRootId != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 12,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _clearLineage,
+                          behavior: HitTestBehavior.opaque,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1D1E09).withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(9999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Lineage of ${_treeState.people[_lineageRootId!]?.name ?? ''}',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.close, size: 14, color: Colors.white),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
 
                   if (_selectedMember != null && _menuPosition != null)
                     Positioned.fill(
@@ -565,7 +634,10 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                       child: Transform.scale(
                         scale: _nodeScale,
                         alignment: Alignment.topLeft,
-                        child: FamilyNode(member: _selectedMember!),
+                        child: FamilyNode(
+                          member: _selectedMember!,
+                          highlighted: _lineageRootId == _selectedMember!.id,
+                        ),
                       ),
                     ),
 
@@ -580,10 +652,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                           member: _selectedMember!,
                           onAddRelative: () =>
                               _openAddRelativeForMember(context, _selectedMember!),
-                          onViewTree: () {
-                            _dismissMenu();
-                            _snack(context, 'View tree');
-                          },
+                          onViewTree: () => _showLineageFor(_selectedMember!),
                           onAddMemory: () =>
                               _openAddMemory(context, _selectedMember!),
                           onViewProfile: () =>

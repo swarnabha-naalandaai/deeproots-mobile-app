@@ -7,6 +7,7 @@ class ConnectorLines extends StatelessWidget {
   final Map<String, Position> positions;
   final double nodeW;
   final double nodeH;
+  final Set<String> lineageIds;
 
   const ConnectorLines({
     super.key,
@@ -14,6 +15,7 @@ class ConnectorLines extends StatelessWidget {
     required this.positions,
     this.nodeW = 110.0,
     this.nodeH = 114.0,
+    this.lineageIds = const {},
   });
 
   @override
@@ -25,6 +27,7 @@ class ConnectorLines extends StatelessWidget {
           positions: positions,
           nodeW: nodeW,
           nodeH: nodeH,
+          lineageIds: lineageIds,
         ),
         size: Size.infinite,
       ),
@@ -43,12 +46,17 @@ class _DynamicConnectorPainter extends CustomPainter {
   final Map<String, Position> positions;
   final double nodeW;
   final double nodeH;
+  final Set<String> lineageIds;
+
+  static const Color _lineColor = Color(0xFF5F5F5F);
+  static const Color _lineageColor = Color(0xFFA07A23);
 
   _DynamicConnectorPainter({
     required this.state,
     required this.positions,
     required this.nodeW,
     required this.nodeH,
+    required this.lineageIds,
   });
 
   @override
@@ -72,10 +80,10 @@ class _DynamicConnectorPainter extends CustomPainter {
       final x2 = max(pa.x, pb.x) + (nodeW - 76) / 2;
 
       if (x2 > x1) {
-        // Draw standard solid line matching any other connection
+        final isLineageEdge = lineageIds.contains(a) && lineageIds.contains(b);
         canvas.drawLine(Offset(x1, y), Offset(x2, y), Paint()
-          ..color = const Color(0xFF5F5F5F)
-          ..strokeWidth = 1.5
+          ..color = isLineageEdge ? _lineageColor : _lineColor
+          ..strokeWidth = isLineageEdge ? 2.0 : 1.5
           ..style = PaintingStyle.stroke);
         paintedSpouses.add('$a-$b');
       }
@@ -98,8 +106,15 @@ class _DynamicConnectorPainter extends CustomPainter {
     });
 
     final linePaint = Paint()
-      ..color = const Color(0xFF5F5F5F)
+      ..color = _lineColor
       ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final lineagePaint = Paint()
+      ..color = _lineageColor
+      ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
@@ -132,6 +147,10 @@ class _DynamicConnectorPainter extends CustomPainter {
 
       // Draw a unified, continuous path of 4 points for each child to enable rounded corner curves
       for (var i = 0; i < cx.length; i++) {
+        final childId = g.children[i];
+        final childInLineage = lineageIds.contains(childId);
+        final anyParentInLineage = g.parents.any(lineageIds.contains);
+        final isLineageEdge = childInLineage && anyParentInLineage;
         _drawRoutedPath(
           canvas,
           [
@@ -140,7 +159,7 @@ class _DynamicConnectorPainter extends CustomPainter {
             Offset(cx[i], my),
             Offset(cx[i], cps[i].y),
           ],
-          linePaint,
+          isLineageEdge ? lineagePaint : linePaint,
           cornerR,
         );
       }
@@ -186,5 +205,7 @@ class _DynamicConnectorPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DynamicConnectorPainter old) =>
-      old.state != state || old.positions != positions;
+      old.state != state ||
+      old.positions != positions ||
+      old.lineageIds != lineageIds;
 }
