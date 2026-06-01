@@ -7,6 +7,7 @@ import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../theme/app_colors.dart';
 import '../post_types/config/field_config.dart';
+import '../widgets/recording_controls.dart';
 
 enum _Phase { idle, recording, review, transcribing, extracting }
 
@@ -26,9 +27,6 @@ class RecipeRecordScreen extends StatefulWidget {
 class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
   static const Color _ringBg = Color(0x80DAC9A3);
   static const Color _micBg = Color(0xFFA07A23);
-  static const Color _stopBg = Color(0xFF7E2525);
-  static const Color _barColor = Color(0xFFDAC9A3);
-  static const _barHeights = [17, 23, 31, 23, 17, 23, 17, 31, 23, 31, 17, 31, 23, 17];
 
   final AudioRecorder _recorder = AudioRecorder();
   final stt.SpeechToText _speech = stt.SpeechToText();
@@ -44,12 +42,6 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
     _recorder.dispose();
     _speech.cancel();
     super.dispose();
-  }
-
-  String get _formatted {
-    final m = _elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = _elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$m:$s';
   }
 
   Future<void> _startRecording() async {
@@ -118,27 +110,7 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
       path: _filePath ?? '',
       duration: _elapsed,
       transcript: _transcript.isEmpty ? null : _transcript,
-      extractedFields: {
-        'title': 'Aloo Paratha — my mother\'s way, with extra ghee',
-        'caption':
-            'Sunday breakfast at home, the kind that makes you sit and not move for two hours after.',
-        'ingredients': <String>[
-          'Wheat flour — 2 cups',
-          'Potatoes — 4 medium, boiled',
-          'Green chili — 1 finely chopped',
-          'Jeera — 1 tsp, grated',
-          'Coriander — small handful, chopped',
-          'Cumin seeds — 1 tsp, roasted and crushed',
-          'Red chilli powder — 1 tsp',
-          'Amchur (dry mango powder) — 1 tsp',
-        ],
-        'steps': <String>[
-          'Knead a soft dough with the flour, a pinch of salt, and water. Rest for 30 minutes.',
-          'Mash the boiled potatoes till there are no lumps.',
-          'Mix in green chili, ginger, coriander, all the spices and salt. Taste the filling — it should be slightly over-seasoned.',
-          'Divide both dough and filling into equal portions, about ping-pong-ball sized.',
-        ],
-      },
+      extractedFields: dummyRecipeExtraction(),
     );
     Navigator.of(context).pop(result);
   }
@@ -150,7 +122,7 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _header(),
+            RecordingHeader(onBack: () => Navigator.of(context).pop()),
             Expanded(child: _body()),
           ],
         ),
@@ -158,42 +130,12 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
     );
   }
 
-  Widget _header() {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFB0A24A), width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            behavior: HitTestBehavior.opaque,
-            child: Icon(PhosphorIcons.caretLeft(), size: 24, color: AppColors.textSecondary),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Record the recipe',
-                style: GoogleFonts.dmSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 24),
-        ],
-      ),
-    );
-  }
-
   Widget _body() {
     if (_phase == _Phase.transcribing || _phase == _Phase.extracting) {
-      return _processingView();
+      final title = _phase == _Phase.transcribing
+          ? 'Listening to your recipe...'
+          : 'Extracting ingredients...';
+      return RecordingProcessingView(title: title);
     }
     return Column(
       children: [
@@ -201,7 +143,7 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
         _micOrb(),
         const SizedBox(height: 16),
         Text(
-          _formatted,
+          formatRecordingTime(_elapsed),
           style: GoogleFonts.dmSans(
             fontSize: 23,
             fontWeight: FontWeight.w700,
@@ -210,15 +152,18 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        _waveform(),
+        const RecordingWaveform(),
         if (_phase == _Phase.review) ...[
           const SizedBox(height: 16),
           _playButton(),
         ],
         const Spacer(flex: 2),
-        if (_phase == _Phase.idle) _tapToRecord(),
-        if (_phase == _Phase.recording) _stopButton(),
-        if (_phase == _Phase.review) _reviewButtons(),
+        if (_phase == _Phase.idle)
+          RecordingStartButton(onTap: _startRecording),
+        if (_phase == _Phase.recording)
+          RecordingStopButton(onTap: _stopRecording),
+        if (_phase == _Phase.review)
+          RecordingReviewButtons(onReRecord: _reRecord, onUse: _useRecording),
         const SizedBox(height: 40),
       ],
     );
@@ -250,29 +195,6 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
     );
   }
 
-  Widget _waveform() {
-    return SizedBox(
-      height: 31,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < _barHeights.length; i++) ...[
-            Container(
-              width: 6,
-              height: _barHeights[i].toDouble(),
-              decoration: BoxDecoration(
-                color: _barColor,
-                borderRadius: BorderRadius.circular(9999),
-              ),
-            ),
-            if (i != _barHeights.length - 1) const SizedBox(width: 4),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _playButton() {
     return Container(
       width: 48,
@@ -289,142 +211,6 @@ class _RecipeRecordScreenState extends State<RecipeRecordScreen> {
         PhosphorIcons.play(PhosphorIconsStyle.fill),
         size: 20,
         color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _tapToRecord() {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: _startRecording,
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: _stopBg,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Container(
-              width: 33,
-              height: 33,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Tap to start recording',
-          style: GoogleFonts.dmSans(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            height: 1.1,
-            color: AppColors.textTertiary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _stopButton() {
-    return GestureDetector(
-      onTap: _stopRecording,
-      child: Container(
-        width: 72,
-        height: 72,
-        decoration: const BoxDecoration(
-          color: _stopBg,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white, width: 2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _reviewButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: _reRecord,
-          behavior: HitTestBehavior.opaque,
-          child: Text(
-            'Re-record',
-            style: GoogleFonts.dmSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              height: 1.1,
-              color: AppColors.textTertiary,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-        const SizedBox(width: 24),
-        GestureDetector(
-          onTap: _useRecording,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.ink,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'Use this recording',
-              style: GoogleFonts.dmSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                height: 1.1,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _processingView() {
-    final title = _phase == _Phase.transcribing
-        ? 'Listening to your recipe...'
-        : 'Extracting ingredients...';
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _waveform(),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: GoogleFonts.dmSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              height: 1.3,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Just a moment',
-            style: GoogleFonts.dmSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              height: 1.3,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }

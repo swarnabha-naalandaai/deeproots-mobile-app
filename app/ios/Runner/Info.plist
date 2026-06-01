@@ -11,7 +11,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Deeproots needs photo library access to attach photos to your stories.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Deeproots needs camera access to attach photos to your stories.</string>
+	<string>Deeproots needs camera access to record video recipes and attach photos to your stories.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

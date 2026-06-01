@@ -168,12 +168,14 @@ class RecipeRecordResult {
   final Duration duration;
   final String? transcript;
   final Map<String, dynamic> extractedFields;
+  final bool isVideo;
 
   const RecipeRecordResult({
     required this.path,
     required this.duration,
     this.transcript,
     this.extractedFields = const {},
+    this.isVideo = false,
   });
 }
 
