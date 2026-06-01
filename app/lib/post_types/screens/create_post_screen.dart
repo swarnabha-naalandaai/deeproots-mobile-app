@@ -45,6 +45,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     setState(() => _values[key] = value);
   }
 
+  Future<void> _onBack() async {
+    if (!_hasContent) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final discard = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => _DiscardDialog(category: widget.config.displayName),
+    );
+    if (discard == true && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   void _onPost() {
     FocusScope.of(context).unfocus();
     final handler = widget.config.onSubmit;
@@ -62,7 +77,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _onBack();
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
@@ -81,6 +101,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -96,7 +117,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: _onBack,
             behavior: HitTestBehavior.opaque,
             child: SizedBox(
               width: 24,
@@ -151,4 +172,153 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
     );
   }
+}
+
+class _DiscardDialog extends StatelessWidget {
+  final String category;
+
+  const _DiscardDialog({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 290,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _warningIcon(),
+              const SizedBox(height: 12),
+              Text(
+                'Discard this ${category.toLowerCase()}?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.dmSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "The content you've added won't be saved.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  height: 1.1,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 23),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(true),
+                      child: Container(
+                        height: 45,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F1F0),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Discard',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            height: 21 / 16,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(false),
+                    child: Container(
+                      height: 45,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Keep editing',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          height: 21 / 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _warningIcon() {
+    return CustomPaint(
+      size: const Size(40.7, 35.25),
+      painter: _TrianglePainter(),
+      child: const SizedBox(
+        width: 40.7,
+        height: 35.25,
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Text(
+              '!',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1D1E09),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrianglePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFF5DD85)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(2),
+    );
+    canvas.clipRRect(rrect);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
