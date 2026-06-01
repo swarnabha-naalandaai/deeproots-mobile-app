@@ -7,6 +7,10 @@ jobs:
   build-ios:
     runs-on: macos-latest
 
+    defaults:
+      run:
+        working-directory: app
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -15,12 +19,20 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.35.5
+          cache: true
 
       - name: Flutter Version
         run: flutter --version
 
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Precache iOS Artifacts
+        run: flutter precache --ios
+
+      - name: Pod Install
+        run: pod install --project-directory=ios
 
       - name: Build iOS (No Codesign)
         run: flutter build ipa --no-codesign
@@ -29,4 +41,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: build/ios/ipa/*.ipa
+          path: app/build/ios/ipa/*.ipa
+          if-no-files-found: error
