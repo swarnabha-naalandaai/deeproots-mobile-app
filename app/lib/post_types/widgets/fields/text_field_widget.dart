@@ -33,6 +33,14 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   }
 
   @override
+  void didUpdateWidget(TextFieldWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

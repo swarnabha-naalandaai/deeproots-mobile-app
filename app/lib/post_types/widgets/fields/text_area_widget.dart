@@ -33,6 +33,14 @@ class _TextAreaWidgetState extends State<TextAreaWidget> {
   }
 
   @override
+  void didUpdateWidget(TextAreaWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

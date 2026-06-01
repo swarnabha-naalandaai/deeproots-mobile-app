@@ -123,6 +123,60 @@ class TagsConfig extends FieldConfig {
   bool hasValue(Object? value) => value is List && value.isNotEmpty;
 }
 
+class ListItemsConfig extends FieldConfig {
+  final String hint;
+  final String addLabel;
+
+  const ListItemsConfig({
+    required super.key,
+    super.label,
+    super.optional,
+    this.hint = '',
+    this.addLabel = '+ Add item',
+  });
+
+  @override
+  Object? defaultValue() => const <String>[];
+
+  @override
+  bool hasValue(Object? value) => value is List && value.isNotEmpty;
+}
+
+class RecipeRecordConfig extends FieldConfig {
+  final String voiceLabel;
+  final String videoLabel;
+  final String subtitle;
+
+  const RecipeRecordConfig({
+    required super.key,
+    super.label,
+    super.optional,
+    this.voiceLabel = 'Voice record',
+    this.videoLabel = 'Video record',
+    this.subtitle = 'Talk through your recipe or video record it. We will listen and structure it.',
+  });
+
+  @override
+  Object? defaultValue() => null;
+
+  @override
+  bool hasValue(Object? value) => value is RecipeRecordResult;
+}
+
+class RecipeRecordResult {
+  final String path;
+  final Duration duration;
+  final String? transcript;
+  final Map<String, dynamic> extractedFields;
+
+  const RecipeRecordResult({
+    required this.path,
+    required this.duration,
+    this.transcript,
+    this.extractedFields = const {},
+  });
+}
+
 class FamilyConfig extends FieldConfig {
   final String emptyLabel;
 

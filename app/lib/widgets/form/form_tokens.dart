@@ -9,6 +9,7 @@ class FormTokens {
   static const Color fieldBorder = Color(0xFF999999);
   static const Color hint = Color(0xFF949494);
   static const Color recordBg = Color(0xFFE5E1CA);
+  static const Color addLink = Color(0xFF1B72A8);
 }
 
 String formatRelativeTime(DateTime t) {

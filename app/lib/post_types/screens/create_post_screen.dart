@@ -45,6 +45,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     setState(() => _values[key] = value);
   }
 
+  void _onBulkChanged(Map<String, dynamic> fields) {
+    setState(() {
+      for (final entry in fields.entries) {
+        if (_values.containsKey(entry.key)) {
+          _values[entry.key] = entry.value;
+        }
+      }
+    });
+  }
+
   Future<void> _onBack() async {
     if (!_hasContent) {
       Navigator.of(context).pop();
@@ -95,6 +105,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   fields: widget.config.fields,
                   values: _values,
                   onChanged: _onFieldChanged,
+                  onBulkChanged: _onBulkChanged,
                 ),
               ),
             ),
