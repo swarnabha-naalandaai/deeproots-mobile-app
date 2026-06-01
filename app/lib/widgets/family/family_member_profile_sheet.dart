@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../models/family_member.dart';
@@ -8,6 +7,7 @@ import '../../models/family_tree_mock.dart';
 import '../../screens/add_relative_screen.dart';
 import '../recording_sheet.dart';
 import '../voice_preview_bar.dart';
+import 'profile_image_crop_screen.dart';
 
 enum _MemoryKind { audio, text }
 
@@ -198,31 +198,11 @@ class _ProfileContentState extends State<_ProfileContent> {
     );
     if (picked == null || !mounted) return;
 
-    final cropped = await ImageCropper().cropImage(
-      sourcePath: picked.path,
-      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-      compressQuality: 85,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Crop profile photo',
-          toolbarColor: const Color(0xFF1D1E09),
-          toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: const Color(0xFFA07A23),
-          cropStyle: CropStyle.circle,
-          lockAspectRatio: true,
-        ),
-        IOSUiSettings(
-          title: 'Crop profile photo',
-          cropStyle: CropStyle.circle,
-          aspectRatioLockEnabled: true,
-          resetAspectRatioEnabled: false,
-        ),
-      ],
-    );
-    if (cropped == null || !mounted) return;
+    final croppedPath = await ProfileImageCropScreen.show(context, picked.path);
+    if (croppedPath == null || !mounted) return;
 
-    setState(() => _localImagePath = cropped.path);
-    widget.onImageChanged?.call(widget.member.id, cropped.path);
+    setState(() => _localImagePath = croppedPath);
+    widget.onImageChanged?.call(widget.member.id, croppedPath);
   }
 
   Future<void> _recordMemory() async {
