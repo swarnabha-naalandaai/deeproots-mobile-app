@@ -621,7 +621,7 @@ class _MentionRow extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: users.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) => _MentionChip(name: users[i], onTap: () => onPick(users[i])),
       ),
     );
@@ -724,7 +724,7 @@ class _InputBar extends StatelessWidget {
           ),
           ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
-            builder: (_, value, _) {
+            builder: (_, value, __) {
               if (value.text.trim().isEmpty) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.only(left: 8),

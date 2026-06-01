@@ -79,7 +79,7 @@ class _WaveformPlayerState extends State<WaveformPlayer> {
       height: 54,
       padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
       decoration: BoxDecoration(
-        color: AppColors.typePillBg.withValues(alpha: 0.5),
+        color: AppColors.typePillBg.withOpacity(0.5),
         borderRadius: BorderRadius.circular(9999),
       ),
       child: Row(

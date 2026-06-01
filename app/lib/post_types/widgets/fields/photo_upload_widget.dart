@@ -201,7 +201,7 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: Colors.black.withOpacity(0.5),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,

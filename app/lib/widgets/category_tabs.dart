@@ -31,7 +31,7 @@ class CategoryTabs extends StatelessWidget {
     return ListView.separated(
       scrollDirection: Axis.horizontal,
       itemCount: tabs.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 12),
+      separatorBuilder: (_, __) => const SizedBox(width: 12),
       itemBuilder: (_, i) {
         final tab = tabs[i];
         final active = tab.type == selected;

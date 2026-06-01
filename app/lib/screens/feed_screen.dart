@@ -74,7 +74,7 @@ class _FeedScreenState extends State<FeedScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.only(bottom: 96),
                 itemCount: filtered.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (_, i) => FeedCard(post: filtered[i]),
               ),
             ),

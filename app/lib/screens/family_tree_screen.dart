@@ -590,7 +590,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1D1E09).withValues(alpha: 0.85),
+                              color: const Color(0xFF1D1E09).withOpacity(0.85),
                               borderRadius: BorderRadius.circular(9999),
                             ),
                             child: Row(
