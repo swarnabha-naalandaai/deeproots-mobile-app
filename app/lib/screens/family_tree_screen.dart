@@ -284,6 +284,17 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
     });
   }
 
+  void _handleImageChanged(String memberId, String imagePath) {
+    setState(() {
+      final member = _treeState.people[memberId];
+      if (member == null) return;
+      final updated = member.copyWith(localImagePath: imagePath);
+      final newPeople = Map<String, FamilyMember>.from(_treeState.people);
+      newPeople[memberId] = updated;
+      _treeState = _treeState.copyWith(people: newPeople);
+    });
+  }
+
   void _handleLinkExisting(String selectedId, Relation relation, FamilyMember subject) {
     setState(() {
       final newParentChild = List<List<String>>.from(_treeState.parentChild);
@@ -338,6 +349,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       initialTab: 1,
       allMembers: _treeState.people.values.toList(),
       onLinkExisting: _handleLinkExisting,
+      onImageChanged: _handleImageChanged,
       onAddRelative: (relation, subject) {
         _openAddRelative(
           context,
@@ -358,6 +370,7 @@ class _FamilyTreeScreenState extends State<FamilyTreeScreen> {
       initialTab: 0,
       allMembers: _treeState.people.values.toList(),
       onLinkExisting: _handleLinkExisting,
+      onImageChanged: _handleImageChanged,
       onAddRelative: (relation, subject) {
         _openAddRelative(
           context,

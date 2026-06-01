@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../models/family_member.dart';
 import '../../models/family_tree_mock.dart';
@@ -54,19 +56,21 @@ void showFamilyMemberProfileSheet(
   List<FamilyMember>? allMembers,
   void Function(Relation relation, FamilyMember subject)? onAddRelative,
   void Function(String selectedId, Relation relation, FamilyMember subject)? onLinkExisting,
+  void Function(String memberId, String imagePath)? onImageChanged,
   int initialTab = 0,
 }) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: const Color(0x26000000), // rgba(0,0,0,0.15)
+    barrierColor: const Color(0x26000000),
     builder: (_) => FamilyMemberProfileSheet(
       member: member,
       initialTab: initialTab,
       onAddRelative: onAddRelative,
       allMembers: allMembers,
       onLinkExisting: onLinkExisting,
+      onImageChanged: onImageChanged,
     ),
   );
 }
@@ -77,6 +81,7 @@ class FamilyMemberProfileSheet extends StatelessWidget {
   final void Function(Relation relation, FamilyMember subject)? onAddRelative;
   final List<FamilyMember>? allMembers;
   final void Function(String selectedId, Relation relation, FamilyMember subject)? onLinkExisting;
+  final void Function(String memberId, String imagePath)? onImageChanged;
 
   const FamilyMemberProfileSheet({
     super.key,
@@ -85,6 +90,7 @@ class FamilyMemberProfileSheet extends StatelessWidget {
     this.onAddRelative,
     this.allMembers,
     this.onLinkExisting,
+    this.onImageChanged,
   });
 
   @override
@@ -108,6 +114,7 @@ class FamilyMemberProfileSheet extends StatelessWidget {
             onAddRelative: onAddRelative,
             allMembers: allMembers,
             onLinkExisting: onLinkExisting,
+            onImageChanged: onImageChanged,
           ),
         );
       },
@@ -122,6 +129,7 @@ class _ProfileContent extends StatefulWidget {
   final void Function(Relation relation, FamilyMember subject)? onAddRelative;
   final List<FamilyMember>? allMembers;
   final void Function(String selectedId, Relation relation, FamilyMember subject)? onLinkExisting;
+  final void Function(String memberId, String imagePath)? onImageChanged;
 
   const _ProfileContent({
     required this.member,
@@ -130,6 +138,7 @@ class _ProfileContent extends StatefulWidget {
     this.onAddRelative,
     this.allMembers,
     this.onLinkExisting,
+    this.onImageChanged,
   });
 
   @override
@@ -139,14 +148,81 @@ class _ProfileContent extends StatefulWidget {
 class _ProfileContentState extends State<_ProfileContent> {
   late int _tabIndex;
   late List<_Memory> _memories;
+  String? _localImagePath;
 
   @override
   void initState() {
     super.initState();
     _tabIndex = widget.initialTab;
+    _localImagePath = widget.member.localImagePath;
     _memories = widget.member.id == 'prerna'
         ? List.of(_seedMemoriesPrerna)
         : <_Memory>[];
+  }
+
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from gallery'),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take a photo'),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      compressQuality: 85,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop profile photo',
+          toolbarColor: const Color(0xFF1D1E09),
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: const Color(0xFFA07A23),
+          cropStyle: CropStyle.circle,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(
+          title: 'Crop profile photo',
+          cropStyle: CropStyle.circle,
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+        ),
+      ],
+    );
+    if (cropped == null || !mounted) return;
+
+    setState(() => _localImagePath = cropped.path);
+    widget.onImageChanged?.call(widget.member.id, cropped.path);
   }
 
   Future<void> _recordMemory() async {
@@ -358,6 +434,10 @@ class _ProfileContentState extends State<_ProfileContent> {
   }
 
   Widget _avatarWithBadge(FamilyMember m) {
+    final effectiveMember = _localImagePath != null
+        ? m.copyWith(localImagePath: _localImagePath)
+        : m;
+    final imgProvider = effectiveMember.imageProvider;
     return SizedBox(
       width: 60,
       height: 60,
@@ -370,13 +450,11 @@ class _ProfileContentState extends State<_ProfileContent> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0xFFE5D7CA),
-              image: m.imageAsset != null
-                  ? DecorationImage(image: AssetImage(m.imageAsset!), fit: BoxFit.cover)
-                  : (m.imageUrl != null
-                      ? DecorationImage(image: NetworkImage(m.imageUrl!), fit: BoxFit.cover)
-                      : null),
+              image: imgProvider != null
+                  ? DecorationImage(image: imgProvider, fit: BoxFit.cover)
+                  : null,
             ),
-            child: (m.imageAsset == null && m.imageUrl == null)
+            child: imgProvider == null
                 ? Icon(
                     PhosphorIcons.user(PhosphorIconsStyle.fill),
                     size: 32,
@@ -396,26 +474,30 @@ class _ProfileContentState extends State<_ProfileContent> {
           Positioned(
             right: -2,
             bottom: -2,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
+            child: GestureDetector(
+              onTap: _pickImage,
+              behavior: HitTestBehavior.opaque,
               child: Container(
-                width: 20,
-                height: 20,
+                width: 24,
+                height: 24,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF5F4EE),
+                  color: Colors.white,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.camera_alt,
-                  size: 12,
-                  color: Colors.black,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF5F4EE),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.camera_alt,
+                    size: 12,
+                    color: Colors.black,
+                  ),
                 ),
               ),
             ),
@@ -773,10 +855,8 @@ class _ProfileContentState extends State<_ProfileContent> {
                           return ListTile(
                             leading: CircleAvatar(
                               backgroundColor: const Color(0xFFE7E2D6),
-                              backgroundImage: p.imageAsset != null
-                                  ? AssetImage(p.imageAsset!)
-                                  : null,
-                              child: p.imageAsset == null
+                              backgroundImage: p.imageProvider,
+                              child: !p.hasImage
                                   ? const Icon(Icons.person, color: Colors.grey)
                                   : null,
                             ),

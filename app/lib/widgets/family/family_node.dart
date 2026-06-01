@@ -23,6 +23,7 @@ class FamilyNode extends StatelessWidget {
         ? const Color(0x33C1A373) // rgba(193,163,115,0.2)
         : null;
 
+    final imgProvider = member.imageProvider;
     Widget avatar = Container(
       width: size,
       height: size,
@@ -32,13 +33,11 @@ class FamilyNode extends StatelessWidget {
         border: highlighted
             ? Border.all(color: const Color(0xFFA07A23), width: 2)
             : (isSelf ? Border.all(color: Colors.black, width: 2) : null),
-        image: member.imageAsset != null
-            ? DecorationImage(image: AssetImage(member.imageAsset!), fit: BoxFit.cover)
-            : (member.imageUrl != null
-                ? DecorationImage(image: NetworkImage(member.imageUrl!), fit: BoxFit.cover)
-                : null),
+        image: imgProvider != null
+            ? DecorationImage(image: imgProvider, fit: BoxFit.cover)
+            : null,
       ),
-      child: (member.imageAsset == null && member.imageUrl == null)
+      child: imgProvider == null
           ? Icon(
               PhosphorIcons.user(PhosphorIconsStyle.fill),
               size: size * 0.55,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 enum Relation {
@@ -18,6 +20,7 @@ class FamilyMember {
   final String? subtitle; // e.g. "You"
   final String? imageAsset;
   final String? imageUrl;
+  final String? localImagePath;
   final String? lifespan;
   final Relation relation;
   final bool deceased;
@@ -32,12 +35,22 @@ class FamilyMember {
     this.subtitle,
     this.imageAsset,
     this.imageUrl,
+    this.localImagePath,
     this.lifespan,
     this.deceased = false,
     this.isPlaceholder = false,
     this.placeholderTint,
     this.badgeCount = 0,
   });
+
+  bool get hasImage => localImagePath != null || imageAsset != null || imageUrl != null;
+
+  ImageProvider? get imageProvider {
+    if (localImagePath != null) return FileImage(File(localImagePath!));
+    if (imageAsset != null) return AssetImage(imageAsset!);
+    if (imageUrl != null) return NetworkImage(imageUrl!);
+    return null;
+  }
 
   String get roleLabel {
     switch (relation) {
@@ -68,6 +81,7 @@ class FamilyMember {
     String? subtitle,
     String? imageAsset,
     String? imageUrl,
+    String? localImagePath,
     String? lifespan,
     Relation? relation,
     bool? deceased,
@@ -81,6 +95,7 @@ class FamilyMember {
       subtitle: subtitle ?? this.subtitle,
       imageAsset: imageAsset ?? this.imageAsset,
       imageUrl: imageUrl ?? this.imageUrl,
+      localImagePath: localImagePath ?? this.localImagePath,
       lifespan: lifespan ?? this.lifespan,
       relation: relation ?? this.relation,
       deceased: deceased ?? this.deceased,

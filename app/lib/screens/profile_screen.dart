@@ -229,30 +229,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _avatar(FamilyMember m, double size) {
-    final hasImg = m.imageAsset != null || m.imageUrl != null;
+    final imgProvider = m.imageProvider;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: const Color(0xFFE5D7CA),
-        image: hasImg
-            ? DecorationImage(
-                image: m.imageAsset != null
-                    ? AssetImage(m.imageAsset!) as ImageProvider
-                    : NetworkImage(m.imageUrl!),
-                fit: BoxFit.cover,
-              )
+        image: imgProvider != null
+            ? DecorationImage(image: imgProvider, fit: BoxFit.cover)
             : null,
       ),
       alignment: Alignment.center,
-      child: hasImg
-          ? null
-          : Icon(
+      child: imgProvider == null
+          ? Icon(
               PhosphorIcons.user(PhosphorIconsStyle.fill),
               size: size * 0.45,
               color: const Color(0xFF88623E),
-            ),
+            )
+          : null,
     );
   }
 

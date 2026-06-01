@@ -19,7 +19,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.24.5
+          flutter-version: 3.41.5
           cache: true
 
       - name: Flutter Version
@@ -30,6 +30,14 @@ jobs:
 
       - name: Precache iOS Artifacts
         run: flutter precache --ios
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: app/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('app/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       - name: Pod Install
         run: pod install --project-directory=ios
