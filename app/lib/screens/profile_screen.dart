@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../models/family_member.dart';
+import '../widgets/bottom_nav.dart';
 
 class _ProfilePost {
   final String imageUrl;
@@ -13,8 +14,16 @@ class _ProfilePost {
 class ProfileScreen extends StatefulWidget {
   final FamilyMember member;
   final bool isSelf;
+  final int? navIndex;
+  final ValueChanged<int>? onNavSelect;
 
-  const ProfileScreen({super.key, required this.member, this.isSelf = false});
+  const ProfileScreen({
+    super.key,
+    required this.member,
+    this.isSelf = false,
+    this.navIndex,
+    this.onNavSelect,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -97,6 +106,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  bool get _isEmbedded => widget.navIndex != null;
+
   @override
   Widget build(BuildContext context) {
     final m = widget.member;
@@ -105,6 +116,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      bottomNavigationBar: _isEmbedded
+          ? BottomNav(
+              selectedIndex: widget.navIndex!,
+              onSelect: widget.onNavSelect!,
+            )
+          : null,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -139,6 +156,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showSelfMenu() {
+    final button = context.findRenderObject() as RenderBox?;
+    if (button == null) return;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (overlay == null) return;
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width - 180,
+        kToolbarHeight + MediaQuery.of(context).padding.top,
+        12,
+        0,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
+      items: [
+        PopupMenuItem<String>(
+          value: 'services',
+          child: Row(
+            children: [
+              Icon(PhosphorIcons.briefcase(), size: 20, color: const Color(0xFF1D1E09)),
+              const SizedBox(width: 12),
+              const Text(
+                'Services',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1D1E09),
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'settings',
+          child: Row(
+            children: [
+              Icon(PhosphorIcons.gear(), size: 20, color: const Color(0xFF1D1E09)),
+              const SizedBox(width: 12),
+              const Text(
+                'Settings',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1D1E09),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == null || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$value coming soon'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    });
+  }
+
   Widget _topBar(String name) {
     final m = widget.member;
     return Padding(
@@ -149,7 +232,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else if (widget.onNavSelect != null) {
+                  widget.onNavSelect!(0);
+                }
+              },
               child: Icon(
                 PhosphorIcons.caretLeft(),
                 size: 24,
@@ -171,11 +260,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            Icon(
-              PhosphorIcons.dotsThreeVertical(),
-              size: 24,
-              color: const Color(0xFF5F5F5F),
-            ),
+            if (widget.isSelf)
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _showSelfMenu,
+                child: Icon(
+                  PhosphorIcons.dotsThreeVertical(),
+                  size: 24,
+                  color: const Color(0xFF5F5F5F),
+                ),
+              ),
           ],
         ),
       ),

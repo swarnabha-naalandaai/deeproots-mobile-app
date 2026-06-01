@@ -160,24 +160,27 @@ class _MenuItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+        width: 182,
+        height: 48,
+        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFF0F1F0),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             icon,
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                height: 18 / 14,
-                color: Color(0xFF1D1E09),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 18 / 14,
+                  color: Color(0xFF1D1E09),
+                ),
               ),
             ),
           ],

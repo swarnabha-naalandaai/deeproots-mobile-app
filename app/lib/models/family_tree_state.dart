@@ -32,6 +32,13 @@ class PathStep {
 }
 
 class FamilyTreeState {
+  static const FamilyMember selfMember = FamilyMember(
+    id: 'riya',
+    name: 'Riya',
+    subtitle: 'You',
+    relation: Relation.self,
+  );
+
   final Map<String, FamilyMember> people;
   final List<List<String>> partners; // List of pairs of person IDs
   final List<List<String>> parentChild; // List of [parent ID, child ID]
@@ -47,12 +54,7 @@ class FamilyTreeState {
   // Factory to build initial mock tree state
   factory FamilyTreeState.initialMock() {
     final people = <String, FamilyMember>{
-      'riya': const FamilyMember(
-        id: 'riya',
-        name: 'Riya',
-        subtitle: 'You',
-        relation: Relation.self,
-      ),
+      'riya': selfMember,
       'ashish': const FamilyMember(
         id: 'ashish',
         name: 'Ashish K. Dey',

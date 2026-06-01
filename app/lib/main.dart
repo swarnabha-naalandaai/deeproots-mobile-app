@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'screens/chat_screen.dart';
 import 'screens/family_tree_screen.dart';
 import 'screens/feed_screen.dart';
+import 'screens/profile_screen.dart';
+import 'models/family_tree_state.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -40,6 +42,14 @@ class _RootShellState extends State<RootShell> {
     }
     if (_navIndex == 2) {
       return FamilyTreeScreen(navIndex: _navIndex, onNavSelect: _select);
+    }
+    if (_navIndex == 4) {
+      return ProfileScreen(
+        member: FamilyTreeState.selfMember,
+        isSelf: true,
+        navIndex: _navIndex,
+        onNavSelect: _select,
+      );
     }
     return FeedScreen(navIndex: _navIndex, onNavSelect: _select);
   }
