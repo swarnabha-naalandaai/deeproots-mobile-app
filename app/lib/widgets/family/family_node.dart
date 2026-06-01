@@ -6,12 +6,14 @@ class FamilyNode extends StatelessWidget {
   final FamilyMember member;
   final VoidCallback? onTap;
   final double size;
+  final bool highlighted;
 
   const FamilyNode({
     super.key,
     required this.member,
     this.onTap,
     this.size = 76,
+    this.highlighted = false,
   });
 
   @override
@@ -27,7 +29,9 @@ class FamilyNode extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: const Color(0xFFE5D7CA),
-        border: isSelf ? Border.all(color: Colors.black, width: 2) : null,
+        border: highlighted
+            ? Border.all(color: const Color(0xFFA07A23), width: 2)
+            : (isSelf ? Border.all(color: Colors.black, width: 2) : null),
         image: member.imageAsset != null
             ? DecorationImage(image: AssetImage(member.imageAsset!), fit: BoxFit.cover)
             : (member.imageUrl != null
@@ -43,6 +47,32 @@ class FamilyNode extends StatelessWidget {
           : null,
     );
 
+    if (highlighted) {
+      avatar = SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              left: -8,
+              top: -8,
+              child: Container(
+                width: 92,
+                height: 92,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x66C1A373),
+                ),
+              ),
+            ),
+            avatar,
+          ],
+        ),
+      );
+    }
+
     if (deceasedOverlay != null) {
       avatar = Stack(
         children: [
@@ -53,6 +83,31 @@ class FamilyNode extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: deceasedOverlay,
               ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (member.deceased && !member.isPlaceholder) {
+      avatar = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          avatar,
+          Positioned(
+            left: (size - 12) / 2,
+            top: -8,
+            child: Icon(
+              PhosphorIcons.sparkle(PhosphorIconsStyle.fill),
+              size: 12,
+              color: const Color(0xFFA07A23),
+              shadows: const [
+                Shadow(
+                  color: Color(0xFFF6D046),
+                  blurRadius: 8.4,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ],

@@ -61,4 +61,33 @@ class FamilyMember {
         return 'Add';
     }
   }
+
+  FamilyMember copyWith({
+    String? id,
+    String? name,
+    String? subtitle,
+    String? imageAsset,
+    String? imageUrl,
+    String? lifespan,
+    Relation? relation,
+    bool? deceased,
+    bool? isPlaceholder,
+    Color? placeholderTint,
+    int? badgeCount,
+  }) {
+    return FamilyMember(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      subtitle: subtitle ?? this.subtitle,
+      imageAsset: imageAsset ?? this.imageAsset,
+      imageUrl: imageUrl ?? this.imageUrl,
+      lifespan: lifespan ?? this.lifespan,
+      relation: relation ?? this.relation,
+      deceased: deceased ?? this.deceased,
+      isPlaceholder: isPlaceholder ?? this.isPlaceholder,
+      placeholderTint: placeholderTint ?? this.placeholderTint,
+      badgeCount: badgeCount ?? this.badgeCount,
+    );
+  }
 }
+
