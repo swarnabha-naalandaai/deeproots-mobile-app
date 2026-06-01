@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,7 +11,7 @@ import '../recording_sheet.dart';
 import '../voice_preview_bar.dart';
 import 'profile_image_crop_screen.dart';
 
-enum _MemoryKind { audio, text }
+enum _MemoryKind { audio, text, photo }
 
 class _Memory {
   final _MemoryKind kind;
@@ -19,6 +21,7 @@ class _Memory {
   final String ago;
   final String? audioPath;
   final Duration duration;
+  final List<String> photoPaths;
   const _Memory({
     required this.kind,
     required this.title,
@@ -27,6 +30,7 @@ class _Memory {
     required this.ago,
     this.audioPath,
     this.duration = Duration.zero,
+    this.photoPaths = const [],
   });
 }
 
@@ -209,19 +213,15 @@ class _ProfileContentState extends State<_ProfileContent> {
     final result = await RecordingSheet.show(
       context,
       title: 'Record a memory of ${_firstName(widget.member.name)}',
-      transcribe: true,
     );
-    if (result == null || !mounted) return;
-    final transcript = result.transcript ?? '';
-    final title = _titleFromTranscript(transcript);
-    final body = transcript.isEmpty ? '(audio memory)' : transcript;
+    if (result == null || result.path == null || !mounted) return;
     setState(() {
       _memories.insert(
         0,
         _Memory(
           kind: _MemoryKind.audio,
-          title: title,
-          body: body,
+          title: 'New memory',
+          body: '(audio memory)',
           recordedBy: 'You',
           ago: 'just now',
           audioPath: result.path,
@@ -236,58 +236,12 @@ class _ProfileContentState extends State<_ProfileContent> {
     final body = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x26000000),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Write a memory of ${_firstName(widget.member.name)}',
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF3E3E3E),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: 6,
-                decoration: const InputDecoration(
-                  hintText: 'A small story, note about them worth remembering.',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.of(ctx).pop(controller.text.trim()),
-                    child: const Text('Save'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        return _WriteMemorySheet(
+          controller: controller,
+          memberFirstName: _firstName(widget.member.name),
         );
       },
     );
@@ -301,6 +255,24 @@ class _ProfileContentState extends State<_ProfileContent> {
           body: body,
           recordedBy: 'You',
           ago: 'just now',
+        ),
+      );
+    });
+  }
+
+  Future<void> _addPhotoMemory() async {
+    final paths = await _AddPhotoSheet.show(context, _firstName(widget.member.name));
+    if (paths == null || paths.isEmpty || !mounted) return;
+    setState(() {
+      _memories.insert(
+        0,
+        _Memory(
+          kind: _MemoryKind.photo,
+          title: '${paths.length} photo${paths.length == 1 ? '' : 's'} of ${_firstName(widget.member.name)}',
+          body: '',
+          recordedBy: 'You',
+          ago: 'just now',
+          photoPaths: paths,
         ),
       );
     });
@@ -568,15 +540,14 @@ class _ProfileContentState extends State<_ProfileContent> {
               size: 18,
               color: const Color(0xFF1D1E09),
             ),
-            onTap: () {},
+            onTap: _addPhotoMemory,
           ),
           const SizedBox(width: 12),
           _addMemoryButton(
-            filled: true,
             child: Icon(
               PhosphorIcons.microphone(PhosphorIconsStyle.fill),
               size: 18,
-              color: Colors.white,
+              color: const Color(0xFF1D1E09),
             ),
             onTap: _recordMemory,
           ),
@@ -1060,6 +1031,7 @@ class _MemoryCardState extends State<_MemoryCard> {
   Widget build(BuildContext context) {
     final m = widget.memory;
     final isAudio = m.kind == _MemoryKind.audio;
+    final isPhoto = m.kind == _MemoryKind.photo;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _expanded = !_expanded),
@@ -1086,15 +1058,21 @@ class _MemoryCardState extends State<_MemoryCard> {
                       size: 14,
                       color: Colors.white,
                     )
-                  : const Text(
-                      'Aa',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
+                  : isPhoto
+                      ? Icon(
+                          PhosphorIcons.camera(PhosphorIconsStyle.fill),
+                          size: 14,
+                          color: Colors.white,
+                        )
+                      : const Text(
+                          'Aa',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1119,15 +1097,33 @@ class _MemoryCardState extends State<_MemoryCard> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                  Text(
-                    _expanded ? m.body : _snippet(m.body),
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      height: 18 / 13,
-                      color: Color(0xFF3E3E3E),
+                  if (isPhoto && m.photoPaths.isNotEmpty) ...[
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 4,
+                        mainAxisSpacing: 4,
+                      ),
+                      itemCount: _expanded ? m.photoPaths.length : m.photoPaths.length.clamp(0, 3),
+                      itemBuilder: (_, i) => ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.file(File(m.photoPaths[i]), fit: BoxFit.cover),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                  ],
+                  if (!isPhoto)
+                    Text(
+                      _expanded ? m.body : _snippet(m.body),
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        height: 18 / 13,
+                        color: Color(0xFF3E3E3E),
+                      ),
+                    ),
                   const SizedBox(height: 6),
                   Text(
                     'Recorded by ${m.recordedBy}, ${m.ago}',
@@ -1173,6 +1169,463 @@ class _MemoryCardState extends State<_MemoryCard> {
   String _snippet(String body) {
     final first = body.split('\n').first.trim();
     final quoted = first.length > 110 ? '${first.substring(0, 110)}…' : first;
-    return '“$quoted”';
+    return '”$quoted”';
   }
+}
+
+class _WriteMemorySheet extends StatefulWidget {
+  final TextEditingController controller;
+  final String memberFirstName;
+
+  const _WriteMemorySheet({
+    required this.controller,
+    required this.memberFirstName,
+  });
+
+  @override
+  State<_WriteMemorySheet> createState() => _WriteMemorySheetState();
+}
+
+class _WriteMemorySheetState extends State<_WriteMemorySheet> {
+  int _charCount = 0;
+  static const int _maxChars = 3000;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    setState(() => _charCount = widget.controller.text.length);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight - topPadding - 36;
+    final sheetHeight = bottomInset > 0
+        ? (screenHeight - bottomInset - topPadding - 36).clamp(200.0, maxHeight)
+        : screenHeight * 0.64;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          height: sheetHeight,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD3D2CE),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Write a memory of ${widget.memberFirstName}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                          color: Color(0xFF3E3E3E),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF6F6F6),
+                            border: Border.all(color: const Color(0xFF999999)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          child: TextField(
+                            controller: widget.controller,
+                            autofocus: true,
+                            maxLines: null,
+                            expands: true,
+                            maxLength: _maxChars,
+                            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                              color: Color(0xFF3E3E3E),
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'A small story, note about them worth remembering.',
+                              hintStyle: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                height: 1.3,
+                                color: Color(0xFF999999),
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$_charCount/$_maxChars',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: Container(
+                                height: 45,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F1F0),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'Discard',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1,
+                                    color: Color(0xFF1D1E09),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(context).pop(
+                                widget.controller.text.trim(),
+                              ),
+                              child: Container(
+                                height: 45,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1D1E09),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'Save memory',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Add-photo memory bottom sheet
+
+// ---------------------------------------------------------------------------
+
+class _AddPhotoSheet extends StatefulWidget {
+  final String personFirstName;
+  const _AddPhotoSheet({required this.personFirstName});
+
+  static Future<List<String>?> show(BuildContext context, String firstName) {
+    return showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x26000000),
+      builder: (_) => _AddPhotoSheet(personFirstName: firstName),
+    );
+  }
+
+  @override
+  State<_AddPhotoSheet> createState() => _AddPhotoSheetState();
+}
+
+class _AddPhotoSheetState extends State<_AddPhotoSheet> {
+  final List<String> _photos = [];
+
+  Future<void> _pickPhotos() async {
+    final picked = await ImagePicker().pickMultiImage(
+      maxWidth: 1200,
+      imageQuality: 85,
+    );
+    if (picked.isEmpty || !mounted) return;
+    setState(() {
+      for (final p in picked) {
+        if (!_photos.contains(p.path)) _photos.add(p.path);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhotos = _photos.isNotEmpty;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 6,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD3D2CE),
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Add photos of ${widget.personFirstName}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      height: 1.1,
+                      color: Color(0xFF3E3E3E),
+                    ),
+                  ),
+                  const SizedBox(height: 52),
+                  if (hasPhotos)
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: _photos.length + 1,
+                      itemBuilder: (_, i) {
+                        if (i == _photos.length) {
+                          return GestureDetector(
+                            onTap: _pickPhotos,
+                            child: const _CameraPlaceholder(small: true),
+                          );
+                        }
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.file(File(_photos[i]), fit: BoxFit.cover),
+                        );
+                      },
+                    )
+                  else
+                    GestureDetector(
+                      onTap: _pickPhotos,
+                      child: const _CameraPlaceholder(small: false),
+                    ),
+                  const SizedBox(height: 52),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(context).pop(null),
+                          child: Container(
+                            height: 45,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F1F0),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'Discard',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                height: 21 / 16,
+                                color: Color(0xFF1D1E09),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: hasPhotos
+                              ? () => Navigator.of(context).pop(List.of(_photos))
+                              : null,
+                          child: Container(
+                            height: 45,
+                            decoration: BoxDecoration(
+                              color: hasPhotos
+                                  ? const Color(0xFF1D1E09)
+                                  : const Color(0xFF9E9E9E),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'Save memory',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                height: 21 / 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraPlaceholder extends StatelessWidget {
+  final bool small;
+  const _CameraPlaceholder({required this.small});
+
+  @override
+  Widget build(BuildContext context) {
+    if (small) {
+      return CustomPaint(
+        painter: const _DashedBorderPainter(
+          color: Color(0xFFC1A373),
+          radius: 4,
+        ),
+        child: Center(
+          child: Icon(
+            PhosphorIcons.camera(),
+            size: 24,
+            color: const Color(0xFF1D1E09),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: 150,
+      height: 150,
+      child: CustomPaint(
+        painter: const _DashedBorderPainter(
+          color: Color(0xFFC1A373),
+          radius: 4,
+        ),
+        child: Center(
+          child: Icon(
+            PhosphorIcons.camera(),
+            size: 36,
+            color: const Color(0xFF1D1E09),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  const _DashedBorderPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    const dashWidth = 5.0;
+    const dashSpace = 4.0;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(radius),
+      ));
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dashWidth),
+          paint,
+        );
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
 }
